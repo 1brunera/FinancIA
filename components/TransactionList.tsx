@@ -88,6 +88,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ transactions, 
               <th className="px-4 py-3 md:px-6 min-w-[140px]">Descrição</th>
               <th className="px-4 py-3 md:px-6">Categoria</th>
               <th className="px-4 py-3 md:px-6 min-w-[140px]">Pagamento</th>
+              <th className="px-4 py-3 md:px-6">Status</th>
               <th className="px-4 py-3 md:px-6 text-right whitespace-nowrap">Valor</th>
               <th className="px-4 py-3 md:px-6 text-center">Ações</th>
             </tr>
@@ -95,7 +96,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ transactions, 
           <tbody className="divide-y divide-slate-100">
             {filteredTransactions.length === 0 ? (
                 <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center text-slate-500 italic">
+                    <td colSpan={7} className="px-6 py-8 text-center text-slate-500 italic">
                         Nenhuma transação encontrada com este filtro.
                     </td>
                 </tr>
@@ -154,6 +155,17 @@ export const TransactionList: React.FC<TransactionListProps> = ({ transactions, 
                             </div>
                         )}
                         {t.type === TransactionType.INCOME && <span className="text-slate-400 text-xs">-</span>}
+                    </td>
+                    <td className="px-4 py-3 md:px-6 md:py-4">
+                        {t.status && (
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] md:text-xs font-medium whitespace-nowrap ${
+                                t.status === 'Pago' || t.status === 'Recebido' ? 'bg-green-100 text-green-700' :
+                                t.status === 'Pendente' ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-red-100 text-red-700'
+                            }`}>
+                                {t.status}
+                            </span>
+                        )}
                     </td>
                     <td className="px-4 py-3 md:px-6 md:py-4 text-right">
                     <span className={`font-semibold text-xs md:text-sm whitespace-nowrap ${t.type === TransactionType.INCOME ? 'text-green-600' : 'text-red-600'}`}>

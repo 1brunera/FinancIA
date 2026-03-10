@@ -3,6 +3,8 @@ export enum TransactionType {
   EXPENSE = 'expense'
 }
 
+export type TransactionStatus = 'Pendente' | 'Pago' | 'Recebido' | 'Cancelado';
+
 export interface Transaction {
   id: string;
   description: string;
@@ -11,6 +13,7 @@ export interface Transaction {
   category: string;
   paymentMethodId?: string; // 'cash' or CreditCard.id
   date: string;
+  status?: TransactionStatus;
   installments?: {
     current: number;
     total: number;

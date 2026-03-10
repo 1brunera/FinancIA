@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Bell, Calendar, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Wallet, Menu, History, PiggyBank } from 'lucide-react';
+import { Plus, Bell, Calendar, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Wallet, Menu, History, PiggyBank, Sun, Moon } from 'lucide-react';
 import { Transaction, TransactionType, CategoryOption, Bill, CreditCard, IncomeReminder, Investment, InvestmentGoal } from './types';
 import { MOCK_TRANSACTIONS, DEFAULT_CATEGORIES, MOCK_INVESTMENTS, MOCK_GOALS } from './constants';
 import { TransactionForm } from './components/TransactionForm';
@@ -213,7 +213,8 @@ const App: React.FC = () => {
         type: TransactionType.EXPENSE,
         category: bill.category || 'outros',
         date: new Date().toISOString().split('T')[0],
-        paymentMethodId: bill.paymentMethodId || 'cash'
+        paymentMethodId: bill.paymentMethodId || 'cash',
+        status: 'Pago'
     }]);
 
     if (bill.recurrence !== 'none') {
@@ -264,7 +265,8 @@ const App: React.FC = () => {
         type: TransactionType.INCOME,
         category: income.category || 'outras_receitas',
         date: new Date().toISOString().split('T')[0],
-        paymentMethodId: 'cash'
+        paymentMethodId: 'cash',
+        status: 'Recebido'
     }]);
 
     if (income.recurrence !== 'none') {
@@ -663,10 +665,6 @@ const App: React.FC = () => {
                         categories={categories}
                         creditCards={creditCards}
                     />
-
-                    <div className="mt-12 pt-8 border-t border-slate-200 text-center text-sm text-slate-500">
-                        Criado por <a href="https://www.linkedin.com/in/brunosergiosilva/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 transition-colors font-medium">Bruno Sergio</a>
-                    </div>
                 </div>
             );
         case 'bills':
@@ -795,15 +793,15 @@ const App: React.FC = () => {
         }`}
       >
         {/* Top Header */}
-        <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-200/60 flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
+        <header className="h-16 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
             <div className="flex items-center gap-3">
                 <button 
                     onClick={() => setIsMobileSidebarOpen(true)}
-                    className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+                    className="md:hidden p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
                 >
                     <Menu size={24} />
                 </button>
-                <h1 className="font-bold text-slate-800 text-lg capitalize truncate max-w-[200px] md:max-w-none">
+                <h1 className="font-bold text-slate-800 dark:text-white text-lg capitalize truncate max-w-[200px] md:max-w-none">
                     {activeView === 'credit-cards' ? 'Cartões' : 
                     activeView === 'ai-advisor' ? 'Consultor IA' : 
                     activeView === 'categories' ? 'Categorias' :
@@ -814,9 +812,18 @@ const App: React.FC = () => {
                     activeView === 'settings' ? 'Configurações' :
                     'Dashboard'}
                 </h1>
-                <span className="hidden md:inline-block text-sm text-slate-500 font-medium ml-2 border-l border-slate-200 pl-3">
-                    {now.toLocaleDateString('pt-BR')} às {now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                </span>
+                <div className="hidden md:flex items-center gap-2 ml-2 border-l border-slate-200 dark:border-slate-700 pl-3">
+                    <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+                        {now.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }).replace(':', 'h')}
+                    </span>
+                    <button
+                        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                        className="p-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                        title="Alternar tema"
+                    >
+                        {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                    </button>
+                </div>
             </div>
             
             <div className="flex items-center gap-4">
@@ -825,9 +832,14 @@ const App: React.FC = () => {
         </header>
 
         {/* Dynamic Content */}
-        <main className="p-4 md:p-8 pb-24 max-w-7xl mx-auto w-full">
+        <main className="p-4 md:p-8 pb-8 max-w-7xl mx-auto w-full flex-1">
             {renderContent()}
         </main>
+
+        {/* Global Footer */}
+        <footer className="w-full py-6 mt-auto border-t border-slate-200 dark:border-slate-800 text-center text-sm text-slate-500 dark:text-slate-400">
+            Criado por <a href="https://www.linkedin.com/in/brunosergiosilva/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors font-medium">Bruno Sergio</a>
+        </footer>
       </div>
 
       {/* Mobile Sticky FAB */}

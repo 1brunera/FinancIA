@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, X, CreditCard as CardIcon, Banknote, Calendar, CheckCircle2 } from 'lucide-react';
-import { Transaction, TransactionType, CategoryOption, CreditCard } from '../types';
+import { Transaction, TransactionType, CategoryOption, CreditCard, TransactionStatus } from '../types';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../constants';
 
 interface TransactionFormProps {
@@ -16,6 +16,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onAdd, onClose
   const [type, setType] = useState<TransactionType>(TransactionType.EXPENSE);
   const [category, setCategory] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [status, setStatus] = useState<TransactionStatus>('Pago');
   const [paymentMethodId, setPaymentMethodId] = useState('cash');
   
   // Installment State
@@ -32,6 +33,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onAdd, onClose
       if (availableCategories.length > 0) {
           setCategory(availableCategories[0].id);
       }
+      setStatus(type === TransactionType.EXPENSE ? 'Pago' : 'Recebido');
   }, [type]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -62,6 +64,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onAdd, onClose
             type,
             category,
             date: dateStr,
+            status,
             paymentMethodId: type === TransactionType.EXPENSE ? paymentMethodId : undefined,
             installments: finalInstallments > 1 ? {
                 current: i + 1,
@@ -162,6 +165,23 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onAdd, onClose
                 </select>
             </div>
 
+            {/* Status */}
+            <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Status</label>
+                <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value as TransactionStatus)}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all text-xs md:text-sm font-medium"
+                >
+                    <option value="Pendente">Pendente</option>
+                    <option value="Pago">Pago</option>
+                    <option value="Recebido">Recebido</option>
+                    <option value="Cancelado">Cancelado</option>
+                </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             {/* Date */}
             <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Data</label>

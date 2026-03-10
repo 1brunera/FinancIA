@@ -6,7 +6,7 @@ import { PiggyBank } from 'lucide-react';
 
 export const AuthScreen: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-slate-900 to-blue-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
+    <div className="min-h-screen bg-gradient-to-br from-black via-black to-blue-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
       <div className="sm:mx-auto sm:w-full sm:max-w-md flex flex-col items-center">
         <h2 className="mt-2 text-center text-4xl font-extrabold tracking-tight">
           <span className="text-white">Finance</span><span className="text-blue-500">IA</span>
