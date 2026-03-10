@@ -1,5 +1,5 @@
 <div align="center">
-<img src="https://i.ibb.co/8gcFTmg3/google-ai-studio.jpg" alt="google-ai-studio made by Bruno Sergio Analista de SEO" border="0"/></a>"/>
+<img src="https://i.ibb.co/8gcFTmg3/google-ai-studio.jpg" alt="google-ai-studio made by Bruno Sergio Analista de SEO" border="0"/></a>
 </div>
 
 # FinancIA
