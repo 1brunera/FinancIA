@@ -6,7 +6,7 @@ import { PiggyBank } from 'lucide-react';
 
 export const AuthScreen: React.FC = () => {
   return (
-    <div className="min-h-screen bg-[#050505] bg-gradient-to-br from-[#000000] via-[#050505] to-[#0a192f] flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
+    <div className="min-h-screen bg-slate-950 bg-gradient-to-br from-black via-slate-900 to-blue-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
       <div className="sm:mx-auto sm:w-full sm:max-w-md flex flex-col items-center">
         <h2 className="mt-2 text-center text-4xl font-extrabold tracking-tight">
           <span className="text-white">Finance</span><span className="text-blue-500">IA</span>
@@ -25,16 +25,17 @@ export const AuthScreen: React.FC = () => {
               variables: {
                 default: {
                   colors: {
-                    brand: '#ffffff', // white
-                    brandAccent: '#e2e8f0', // slate-200
+                    brand: '#3b82f6', // blue-500
+                    brandAccent: '#2563eb', // blue-600
+                    brandButtonText: '#ffffff',
                     defaultButtonBackground: 'transparent',
                     defaultButtonBackgroundHover: 'rgba(255,255,255,0.1)',
                     defaultButtonBorder: 'rgba(255,255,255,0.2)',
                     defaultButtonText: '#ffffff',
-                    inputBackground: 'transparent',
+                    inputBackground: 'rgba(0,0,0,0.2)',
                     inputBorder: 'rgba(255,255,255,0.2)',
                     inputBorderHover: 'rgba(255,255,255,0.4)',
-                    inputBorderFocus: '#ffffff',
+                    inputBorderFocus: '#3b82f6',
                     inputText: '#ffffff',
                     inputPlaceholder: 'rgba(255,255,255,0.5)',
                   },
@@ -42,10 +43,10 @@ export const AuthScreen: React.FC = () => {
               },
               className: {
                 container: 'w-full font-sans',
-                button: 'rounded-xl font-medium text-slate-900',
+                button: 'rounded-xl font-medium text-white',
                 input: 'rounded-xl text-white',
                 label: 'text-white/90 font-medium',
-                anchor: 'text-white/70 hover:text-white',
+                anchor: 'text-blue-400 hover:text-blue-300',
                 message: 'text-white/90',
                 divider: 'bg-white/20',
               }
