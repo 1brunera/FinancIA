@@ -663,6 +663,10 @@ const App: React.FC = () => {
                         categories={categories}
                         creditCards={creditCards}
                     />
+
+                    <div className="mt-12 pt-8 border-t border-slate-200 text-center text-sm text-slate-500">
+                        Criado por <a href="https://www.linkedin.com/in/brunosergiosilva/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 transition-colors font-medium">Bruno Sergio</a>
+                    </div>
                 </div>
             );
         case 'bills':

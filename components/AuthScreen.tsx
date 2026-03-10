@@ -6,18 +6,18 @@ import { PiggyBank } from 'lucide-react';
 
 export const AuthScreen: React.FC = () => {
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
+    <div className="min-h-screen bg-gradient-to-br from-black via-slate-900 to-blue-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
       <div className="sm:mx-auto sm:w-full sm:max-w-md flex flex-col items-center">
         <h2 className="mt-2 text-center text-4xl font-extrabold tracking-tight">
-          <span className="text-slate-900 dark:text-white">Finance</span><span className="text-blue-500">IA</span>
+          <span className="text-white">Finance</span><span className="text-blue-500">IA</span>
         </h2>
-        <p className="mt-2 text-center text-sm text-slate-600 dark:text-slate-400">
-          Acesse sua conta para gerenciar suas finanças
+        <p className="mt-2 text-center text-sm text-slate-300">
+          O seu assistente pessoal financeiro com IA e fácil de usar.
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white dark:bg-slate-800 py-8 px-4 shadow-xl shadow-slate-200/50 dark:shadow-none sm:rounded-3xl sm:px-10 border border-slate-100 dark:border-slate-700">
+        <div className="bg-slate-900/80 backdrop-blur-xl py-8 px-4 shadow-2xl shadow-blue-900/20 sm:rounded-3xl sm:px-10 border border-slate-800">
           <Auth
             supabaseClient={supabase}
             appearance={{
@@ -25,15 +25,24 @@ export const AuthScreen: React.FC = () => {
               variables: {
                 default: {
                   colors: {
-                    brand: '#0f172a', // slate-900
-                    brandAccent: '#334155', // slate-700
+                    brand: '#3b82f6', // blue-500
+                    brandAccent: '#2563eb', // blue-600
+                    defaultButtonBackground: '#1e293b',
+                    defaultButtonBackgroundHover: '#334155',
+                    inputBackground: '#0f172a',
+                    inputBorder: '#334155',
+                    inputText: '#f8fafc',
+                    inputPlaceholder: '#64748b',
                   },
                 },
               },
               className: {
                 container: 'w-full',
-                button: 'rounded-xl font-medium',
-                input: 'rounded-xl',
+                button: 'rounded-xl font-medium text-white',
+                input: 'rounded-xl text-white',
+                label: 'text-slate-300',
+                anchor: 'text-blue-400 hover:text-blue-300',
+                message: 'text-slate-300',
               }
             }}
             providers={['google']}
@@ -72,6 +81,10 @@ export const AuthScreen: React.FC = () => {
             }}
           />
         </div>
+      </div>
+
+      <div className="mt-8 text-center text-sm text-slate-400">
+        Criado por <a href="https://www.linkedin.com/in/brunosergiosilva/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors font-medium">Bruno Sergio</a>
       </div>
     </div>
   );
