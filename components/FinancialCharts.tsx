@@ -114,20 +114,20 @@ export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, 
       <div className="mb-6">
         <div className="flex justify-between items-end mb-2">
           <div>
-            <h4 className="font-bold text-slate-700 text-sm flex items-center gap-2">
+            <h4 className="font-bold text-slate-700 dark:text-slate-200 text-sm flex items-center gap-2">
               {label} <span className="text-xs text-slate-400 font-normal">({(percentageTarget * 100).toFixed(0)}%)</span>
             </h4>
-            <p className="text-xs text-slate-500">{description}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{description}</p>
           </div>
           <div className="text-right">
-             <span className="font-bold text-slate-800 text-sm">{formatCurrency(current)}</span>
+             <span className="font-bold text-slate-800 dark:text-white text-sm">{formatCurrency(current)}</span>
              <span className="text-xs text-slate-400 mx-1">de</span>
-             <span className="text-xs text-slate-500 font-medium">{formatCurrency(max)}</span>
+             <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{formatCurrency(max)}</span>
           </div>
         </div>
         
         {/* Progress Bar Container */}
-        <div className="h-4 bg-slate-100 rounded-full overflow-hidden w-full relative">
+        <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden w-full relative">
             {/* Background markers for 80% and 100% */}
             <div className="absolute top-0 bottom-0 left-[80%] w-[1px] bg-white/50 z-10"></div>
             
@@ -158,7 +158,7 @@ export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, 
 
   if (transactions.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl">
+      <div className="flex items-center justify-center h-64 bg-slate-50 dark:bg-slate-950 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl">
         <p className="text-slate-400">Adicione transações para ver os gráficos</p>
       </div>
     );
@@ -170,17 +170,17 @@ export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, 
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
       
       {/* Budget Analysis Chart */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col">
         <div className="flex justify-between items-start mb-6">
             <div>
-                <h3 className="text-lg font-semibold text-slate-800">Modelo de Orçamento</h3>
-                <p className="text-xs text-slate-500">Planejado vs Real (Baseado na Receita)</p>
+                <h3 className="text-lg font-semibold text-slate-800 dark:text-white">Modelo de Orçamento</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Planejado vs Real (Baseado na Receita)</p>
             </div>
             <div className="relative">
                 <select 
                     value={budgetModel}
                     onChange={(e) => handleModelChange(e.target.value)}
-                    className="appearance-none bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold py-1.5 pl-3 pr-8 rounded-lg outline-none cursor-pointer hover:border-indigo-300 transition-colors"
+                    className="appearance-none bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold py-1.5 pl-3 pr-8 rounded-lg outline-none cursor-pointer hover:border-indigo-300 transition-colors"
                 >
                     <option value="50/30/20">50/30/20</option>
                     <option value="60/20/20">60/20/20</option>
@@ -192,8 +192,8 @@ export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, 
         </div>
 
         {budgetModel === 'custom' && (
-            <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-100">
-                <div className="flex items-center gap-2 mb-3 text-sm font-bold text-slate-700">
+            <div className="mb-6 p-4 bg-slate-50 dark:bg-slate-950 rounded-lg border border-slate-100 dark:border-slate-800">
+                <div className="flex items-center gap-2 mb-3 text-sm font-bold text-slate-700 dark:text-slate-200">
                     <Edit3 size={14} /> Defina as porcentagens
                 </div>
                 <div className="grid grid-cols-3 gap-3">
@@ -204,7 +204,7 @@ export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, 
                                 type="number" 
                                 value={customNeeds}
                                 onChange={e => setCustomNeeds(Number(e.target.value))}
-                                className="w-full pl-2 pr-6 py-1.5 rounded border border-slate-200 text-sm font-bold focus:ring-1 focus:ring-primary-500 outline-none"
+                                className="w-full pl-2 pr-6 py-1.5 rounded border border-slate-200 dark:border-slate-700 text-sm font-bold focus:ring-1 focus:ring-primary-500 outline-none"
                              />
                              <span className="absolute right-2 top-1.5 text-xs text-slate-400">%</span>
                         </div>
@@ -216,7 +216,7 @@ export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, 
                                 type="number" 
                                 value={customWants}
                                 onChange={e => setCustomWants(Number(e.target.value))}
-                                className="w-full pl-2 pr-6 py-1.5 rounded border border-slate-200 text-sm font-bold focus:ring-1 focus:ring-primary-500 outline-none"
+                                className="w-full pl-2 pr-6 py-1.5 rounded border border-slate-200 dark:border-slate-700 text-sm font-bold focus:ring-1 focus:ring-primary-500 outline-none"
                              />
                              <span className="absolute right-2 top-1.5 text-xs text-slate-400">%</span>
                         </div>
@@ -228,7 +228,7 @@ export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, 
                                 type="number" 
                                 value={customSavings}
                                 onChange={e => setCustomSavings(Number(e.target.value))}
-                                className="w-full pl-2 pr-6 py-1.5 rounded border border-slate-200 text-sm font-bold focus:ring-1 focus:ring-primary-500 outline-none"
+                                className="w-full pl-2 pr-6 py-1.5 rounded border border-slate-200 dark:border-slate-700 text-sm font-bold focus:ring-1 focus:ring-primary-500 outline-none"
                              />
                              <span className="absolute right-2 top-1.5 text-xs text-slate-400">%</span>
                         </div>
@@ -282,8 +282,8 @@ export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, 
       </div>
 
       {/* Expenses Breakdown Pie Chart */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-        <h3 className="text-lg font-semibold text-slate-800 mb-4">Despesas por Categoria</h3>
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800">
+        <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Despesas por Categoria</h3>
         <div className="h-64 w-full">
           {expenseData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">

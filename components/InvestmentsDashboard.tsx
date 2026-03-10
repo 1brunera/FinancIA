@@ -172,10 +172,10 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
         {/* Modals */}
         {isInvModalOpen && (
              <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                 <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-in">
-                    <div className="px-6 py-5 bg-white border-b border-slate-100 flex justify-between items-center">
-                        <h3 className="text-xl font-bold text-slate-800">Novo Investimento</h3>
-                        <button onClick={() => setIsInvModalOpen(false)} className="p-2 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-500 transition-colors">
+                 <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-in">
+                    <div className="px-6 py-5 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                        <h3 className="text-xl font-bold text-slate-800 dark:text-white">Novo Investimento</h3>
+                        <button onClick={() => setIsInvModalOpen(false)} className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-full text-slate-500 dark:text-slate-400 transition-colors">
                             <X size={20} />
                         </button>
                     </div>
@@ -188,7 +188,7 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
                                 placeholder="Ex: CDB Nubank, PETR4..."
                                 value={invName}
                                 onChange={e => setInvName(e.target.value)}
-                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
+                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
                             />
                         </div>
                         <div>
@@ -199,7 +199,7 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
                                 placeholder="0.00"
                                 value={invAmount}
                                 onChange={e => setInvAmount(e.target.value)}
-                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
+                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
                             />
                         </div>
                         <div>
@@ -207,7 +207,7 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
                             <select 
                                 value={invType}
                                 onChange={e => setInvType(e.target.value as InvestmentType)}
-                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
+                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
                             >
                                 <option value="fixed">Renda Fixa</option>
                                 <option value="stock">Ações</option>
@@ -217,7 +217,7 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
                                 <option value="fund">Fundos de Investimento</option>
                             </select>
                         </div>
-                        <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
                              <input 
                                 type="checkbox"
                                 id="isLiquidity"
@@ -225,7 +225,7 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
                                 onChange={e => setIsLiquidity(e.target.checked)}
                                 className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500"
                              />
-                             <label htmlFor="isLiquidity" className="text-sm text-slate-700 select-none">
+                             <label htmlFor="isLiquidity" className="text-sm text-slate-700 dark:text-slate-200 select-none">
                                  Este ativo tem liquidez diária?
                                  <span className="block text-xs text-slate-400 font-normal">Marque para contar na Reserva de Emergência.</span>
                              </label>
@@ -240,10 +240,10 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
 
         {isGoalModalOpen && (
              <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                 <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-in">
-                    <div className="px-6 py-5 bg-white border-b border-slate-100 flex justify-between items-center">
-                        <h3 className="text-xl font-bold text-slate-800">Nova Meta / Sonho</h3>
-                        <button onClick={() => setIsGoalModalOpen(false)} className="p-2 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-500 transition-colors">
+                 <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-in">
+                    <div className="px-6 py-5 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                        <h3 className="text-xl font-bold text-slate-800 dark:text-white">Nova Meta / Sonho</h3>
+                        <button onClick={() => setIsGoalModalOpen(false)} className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-full text-slate-500 dark:text-slate-400 transition-colors">
                             <X size={20} />
                         </button>
                     </div>
@@ -256,7 +256,7 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
                                 placeholder="Ex: Viagem Disney, Casa Própria..."
                                 value={goalName}
                                 onChange={e => setGoalName(e.target.value)}
-                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
+                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
                             />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
@@ -268,7 +268,7 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
                                     placeholder="0.00"
                                     value={goalTarget}
                                     onChange={e => setGoalTarget(e.target.value)}
-                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
+                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
                                 />
                             </div>
                              <div>
@@ -278,7 +278,7 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
                                     placeholder="0.00"
                                     value={goalCurrent}
                                     onChange={e => setGoalCurrent(e.target.value)}
-                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
+                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
                                 />
                             </div>
                         </div>
@@ -289,7 +289,7 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
                                 required
                                 value={goalDeadline}
                                 onChange={e => setGoalDeadline(e.target.value)}
-                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
+                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
                              />
                         </div>
                         <button type="submit" className="w-full bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-slate-800 transition-colors">
@@ -301,7 +301,7 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
         )}
 
         <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-slate-800">Meus Investimentos</h2>
+            <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Meus Investimentos</h2>
             <button 
                 onClick={() => setIsInvModalOpen(true)}
                 className="bg-slate-900 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-slate-800 transition-all flex items-center gap-2"
@@ -322,23 +322,23 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
             </div>
 
             {/* Smart Emergency Fund Widget */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm md:col-span-2">
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm md:col-span-2">
                 <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
                             <ShieldCheck size={24} />
                         </div>
                         <div>
-                            <h3 className="font-bold text-slate-800">Reserva de Emergência</h3>
-                            <p className="text-xs text-slate-500">Baseado no seu custo de vida médio ({formatCurrency(safeAvgExpense)}/mês)</p>
+                            <h3 className="font-bold text-slate-800 dark:text-white">Reserva de Emergência</h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">Baseado no seu custo de vida médio ({formatCurrency(safeAvgExpense)}/mês)</p>
                         </div>
                     </div>
-                    <div className="flex bg-slate-100 p-1 rounded-lg">
+                    <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
                         {[3, 6, 12].map(m => (
                             <button
                                 key={m}
                                 onClick={() => setEmergencyMonths(m as any)}
-                                className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${emergencyMonths === m ? 'bg-white shadow text-blue-600' : 'text-slate-500'}`}
+                                className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${emergencyMonths === m ? 'bg-white dark:bg-slate-900 shadow text-blue-600' : 'text-slate-500 dark:text-slate-400'}`}
                             >
                                 {m} Meses
                             </button>
@@ -348,10 +348,10 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
 
                 <div className="space-y-2">
                     <div className="flex justify-between text-sm font-medium">
-                        <span className="text-slate-600">Você tem: <strong className="text-slate-800">{formatCurrency(liquidityTotal)}</strong></span>
+                        <span className="text-slate-600 dark:text-slate-300">Você tem: <strong className="text-slate-800 dark:text-white">{formatCurrency(liquidityTotal)}</strong></span>
                         <span className="text-slate-400">Meta: {formatCurrency(emergencyTarget)}</span>
                     </div>
-                    <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                         <div 
                             className={`h-full rounded-full transition-all duration-1000 ${emergencyProgress >= 100 ? 'bg-green-500' : 'bg-blue-500'}`}
                             style={{ width: `${Math.min(emergencyProgress, 100)}%` }}
@@ -372,8 +372,8 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Asset Allocation */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm lg:col-span-1">
-                <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm lg:col-span-1">
+                <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
                     <PieChartIcon size={20} className="text-indigo-500" /> Alocação de Ativos
                 </h3>
                 <div className="h-64">
@@ -398,22 +398,22 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
                     </ResponsiveContainer>
                 </div>
                 {/* List of Investments (Small) */}
-                <div className="mt-4 border-t border-slate-100 pt-4 space-y-2 max-h-48 overflow-y-auto">
+                <div className="mt-4 border-t border-slate-100 dark:border-slate-800 pt-4 space-y-2 max-h-48 overflow-y-auto">
                     {investments.map(inv => (
                         <div key={inv.id} className="flex justify-between items-center text-xs">
                              <div className="flex items-center gap-2">
                                  <button onClick={() => onDeleteInvestment(inv.id)} className="text-slate-300 hover:text-red-500"><Trash2 size={12}/></button>
-                                 <span className="text-slate-700 font-medium truncate max-w-[120px]" title={inv.name}>{inv.name}</span>
+                                 <span className="text-slate-700 dark:text-slate-200 font-medium truncate max-w-[120px]" title={inv.name}>{inv.name}</span>
                              </div>
-                             <span className="font-bold text-slate-600">{formatCurrency(inv.amount)}</span>
+                             <span className="font-bold text-slate-600 dark:text-slate-300">{formatCurrency(inv.amount)}</span>
                         </div>
                     ))}
                 </div>
             </div>
 
             {/* Net Worth Evolution */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm lg:col-span-2">
-                 <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm lg:col-span-2">
+                 <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
                     <TrendingUp size={20} className="text-green-500" /> Evolução Patrimonial
                 </h3>
                 <div className="h-64">
@@ -440,12 +440,12 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
             {/* Goals (The "Bucket" Strategy) */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
                 <div className="flex justify-between items-center mb-6">
-                     <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                     <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
                         <Target size={20} className="text-red-500" /> Metas e Sonhos
                     </h3>
-                    <button onClick={() => setIsGoalModalOpen(true)} className="p-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-600 transition-colors">
+                    <button onClick={() => setIsGoalModalOpen(true)} className="p-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-lg text-slate-600 dark:text-slate-300 transition-colors">
                         <Plus size={16} />
                     </button>
                 </div>
@@ -460,10 +460,10 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
                                 </button>
                                 <div className="flex justify-between items-end mb-1">
                                     <div>
-                                        <p className="font-bold text-slate-700 text-sm">{goal.name}</p>
+                                        <p className="font-bold text-slate-700 dark:text-slate-200 text-sm">{goal.name}</p>
                                         <div className="flex items-center gap-2 text-[10px] text-slate-400">
                                             <span>Prazo: {new Date(goal.deadline).toLocaleDateString()}</span>
-                                            <span className="flex items-center gap-0.5 bg-slate-50 px-1 rounded text-slate-500">
+                                            <span className="flex items-center gap-0.5 bg-slate-50 dark:bg-slate-950 px-1 rounded text-slate-500 dark:text-slate-400">
                                                 <Clock size={8} /> {getRemainingTime(goal.deadline)}
                                             </span>
                                         </div>
@@ -473,7 +473,7 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
                                         <span className="text-[10px] text-slate-400 block">de {formatCurrency(goal.targetAmount)}</span>
                                     </div>
                                 </div>
-                                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                                <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                                     <div 
                                         className="h-full bg-indigo-500 rounded-full transition-all duration-1000" 
                                         style={{ width: `${progress}%` }}
@@ -487,21 +487,21 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
             </div>
 
             {/* Dividend Calendar */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-                 <h3 className="font-bold text-slate-800 mb-6 flex items-center gap-2">
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                 <h3 className="font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
                     <DollarSign size={20} className="text-yellow-500" /> Últimos Proventos
                 </h3>
 
                 <div className="space-y-3">
                     {dividendTransactions.length > 0 ? (
                         dividendTransactions.map(div => (
-                            <div key={div.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                            <div key={div.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-slate-800">
                                 <div className="flex items-center gap-3">
-                                    <div className="bg-white p-2 rounded-lg text-yellow-600 shadow-sm">
+                                    <div className="bg-white dark:bg-slate-900 p-2 rounded-lg text-yellow-600 shadow-sm">
                                         <Wallet size={16} />
                                     </div>
                                     <div>
-                                        <p className="text-xs font-bold text-slate-700">{div.description}</p>
+                                        <p className="text-xs font-bold text-slate-700 dark:text-slate-200">{div.description}</p>
                                         <p className="text-[10px] text-slate-400 flex items-center gap-1">
                                             <Calendar size={10} /> {new Date(div.date).toLocaleDateString()}
                                         </p>

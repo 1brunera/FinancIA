@@ -122,40 +122,40 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({ cards, tra
             {/* Edit Modal */}
             {isEditing && (
                 <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                     <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-in">
-                        <div className="px-6 py-5 bg-white border-b border-slate-100 flex justify-between items-center">
-                            <h3 className="text-xl font-bold text-slate-800">Editar Cartão</h3>
-                            <button onClick={() => setIsEditing(false)} className="p-2 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-500 transition-colors">
+                     <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-in">
+                        <div className="px-6 py-5 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                            <h3 className="text-xl font-bold text-slate-800 dark:text-white">Editar Cartão</h3>
+                            <button onClick={() => setIsEditing(false)} className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-full text-slate-500 dark:text-slate-400 transition-colors">
                                 <X size={20} />
                             </button>
                         </div>
                         
                         <form onSubmit={handleUpdate} className="p-6 space-y-4">
                             <div>
-                                <label className="block text-xs font-medium text-slate-500 mb-1">Nome do Cartão</label>
+                                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Nome do Cartão</label>
                                 <input
                                     type="text"
                                     required
                                     value={editName}
                                     onChange={(e) => setEditName(e.target.value)}
-                                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500"
+                                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-indigo-500"
                                 />
                             </div>
                             
                             <div>
-                                <label className="block text-xs font-medium text-slate-500 mb-1">Limite (R$)</label>
+                                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Limite (R$)</label>
                                 <input
                                     type="number"
                                     required
                                     value={editLimit}
                                     onChange={(e) => setEditLimit(e.target.value)}
-                                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500"
+                                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-indigo-500"
                                 />
                             </div>
 
                             <div className="flex gap-4">
                                 <div className="flex-1">
-                                    <label className="block text-xs font-medium text-slate-500 mb-1">Data de fechamento</label>
+                                    <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Data de fechamento</label>
                                     <input
                                     type="number"
                                     min="1"
@@ -163,11 +163,11 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({ cards, tra
                                     required
                                     value={editClosingDay}
                                     onChange={(e) => setEditClosingDay(e.target.value)}
-                                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500"
+                                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-indigo-500"
                                     />
                                 </div>
                                 <div className="flex-1">
-                                    <label className="block text-xs font-medium text-slate-500 mb-1">Data de vencimento</label>
+                                    <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Data de vencimento</label>
                                     <input
                                     type="number"
                                     min="1"
@@ -175,13 +175,13 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({ cards, tra
                                     required
                                     value={editDueDay}
                                     onChange={(e) => setEditDueDay(e.target.value)}
-                                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500"
+                                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-indigo-500"
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <p className="text-xs text-slate-500 mb-2">Cor:</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">Cor:</p>
                                 <div className="flex flex-wrap gap-2">
                                     {COLOR_PALETTE.map(color => (
                                         <button
@@ -208,7 +208,7 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({ cards, tra
 
             <button 
                 onClick={() => setSelectedCard(null)}
-                className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-bold transition-colors mb-4"
+                className="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-white font-bold transition-colors mb-4"
             >
                 <ArrowLeft size={20} /> Voltar para cartões
             </button>
@@ -282,10 +282,10 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({ cards, tra
                 </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 md:p-6">
+            <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 p-4 md:p-6">
                 <div className="flex items-center gap-2 mb-4 md:mb-6">
                     <Layers className="text-primary-600" size={24} />
-                    <h3 className="text-lg font-bold text-slate-800">Histórico de Transações</h3>
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-white">Histórico de Transações</h3>
                 </div>
                 
                 {cardTransactions.length > 0 ? (
@@ -311,40 +311,40 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({ cards, tra
       
       {/* Dashboard Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-          <div className="bg-white p-4 md:p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+          <div className="bg-white dark:bg-slate-900 p-4 md:p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex items-center gap-4">
               <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
                   <CreditCard size={24} />
               </div>
               <div>
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Limite Total</p>
-                  <p className="text-xl md:text-2xl font-bold text-slate-800">{formatCurrency(totalLimit)}</p>
+                  <p className="text-xl md:text-2xl font-bold text-slate-800 dark:text-white">{formatCurrency(totalLimit)}</p>
               </div>
           </div>
           
-          <div className="bg-white p-4 md:p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+          <div className="bg-white dark:bg-slate-900 p-4 md:p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex items-center gap-4">
               <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
                   <TrendingUp size={24} />
               </div>
               <div>
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Gastos (Mês Atual)</p>
-                  <p className="text-xl md:text-2xl font-bold text-slate-800">{formatCurrency(totalSpentGlobal)}</p>
+                  <p className="text-xl md:text-2xl font-bold text-slate-800 dark:text-white">{formatCurrency(totalSpentGlobal)}</p>
               </div>
           </div>
 
-          <div className="bg-white p-4 md:p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+          <div className="bg-white dark:bg-slate-900 p-4 md:p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex items-center gap-4">
               <div className="p-3 bg-green-50 text-green-600 rounded-xl">
                   <Wallet size={24} />
               </div>
               <div>
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Disponível Total</p>
-                  <p className="text-xl md:text-2xl font-bold text-slate-800">{formatCurrency(totalAvailable)}</p>
+                  <p className="text-xl md:text-2xl font-bold text-slate-800 dark:text-white">{formatCurrency(totalAvailable)}</p>
               </div>
           </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="px-4 py-3 md:px-6 md:py-4 border-b border-slate-100 bg-slate-50/50">
-            <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
+        <div className="px-4 py-3 md:px-6 md:py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50">
+            <h3 className="text-lg font-semibold text-slate-800 dark:text-white flex items-center gap-2">
             <CreditCard className="text-primary-600" size={20} />
             Meus Cartões
             </h3>
@@ -352,8 +352,8 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({ cards, tra
         
         <div className="p-4 md:p-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Form */}
-            <div className="bg-white p-4 md:p-6 rounded-xl border border-slate-200 order-2 lg:order-1">
-            <h4 className="font-medium text-slate-800 mb-4">Novo Cartão</h4>
+            <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-xl border border-slate-200 dark:border-slate-700 order-2 lg:order-1">
+            <h4 className="font-medium text-slate-800 dark:text-white mb-4">Novo Cartão</h4>
             
             {error && (
                 <div className="mb-4 p-3 bg-red-50 text-red-600 text-xs font-bold rounded-lg flex items-center gap-2 border border-red-100">
@@ -364,32 +364,32 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({ cards, tra
 
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Nome do Cartão</label>
+                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Nome do Cartão</label>
                 <input
                     type="text"
                     required
                     placeholder="Ex: Nubank, Visa Platinum"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500"
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-indigo-500"
                 />
                 </div>
                 
                 <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Limite (R$)</label>
+                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Limite (R$)</label>
                 <input
                     type="number"
                     required
                     placeholder="0.00"
                     value={limit}
                     onChange={(e) => setLimit(e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500"
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-indigo-500"
                 />
                 </div>
 
                 <div className="flex gap-4">
                 <div className="flex-1">
-                    <label className="block text-xs font-medium text-slate-500 mb-1">Data de fechamento</label>
+                    <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Data de fechamento</label>
                     <input
                     type="number"
                     min="1"
@@ -398,11 +398,11 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({ cards, tra
                     placeholder="Dia"
                     value={closingDay}
                     onChange={(e) => setClosingDay(e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500"
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-indigo-500"
                     />
                 </div>
                 <div className="flex-1">
-                    <label className="block text-xs font-medium text-slate-500 mb-1">Data de vencimento</label>
+                    <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Data de vencimento</label>
                     <input
                     type="number"
                     min="1"
@@ -411,13 +411,13 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({ cards, tra
                     placeholder="Dia"
                     value={dueDay}
                     onChange={(e) => setDueDay(e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500"
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-indigo-500"
                     />
                 </div>
                 </div>
 
                 <div>
-                    <p className="text-xs text-slate-500 mb-2">Cor:</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">Cor:</p>
                     <div className="flex flex-wrap gap-2">
                         {COLOR_PALETTE.map(color => (
                             <button

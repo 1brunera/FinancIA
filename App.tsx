@@ -118,6 +118,7 @@ const App: React.FC = () => {
   });
 
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
 
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('finance_theme') || 'light';
@@ -175,8 +176,16 @@ const App: React.FC = () => {
     setTransactions(prev => [...newTransactions, ...prev]);
   };
 
+  const handleEditTransaction = (updatedTransaction: Transaction) => {
+    setTransactions(prev => prev.map(t => t.id === updatedTransaction.id ? updatedTransaction : t));
+  };
+
   const handleDeleteTransaction = (id: string) => {
     setTransactions(prev => prev.filter(t => t.id !== id));
+  };
+
+  const handleUpdateTransactionStatus = (id: string, newStatus: TransactionStatus) => {
+    setTransactions(prev => prev.map(t => t.id === id ? { ...t, status: newStatus } : t));
   };
 
   const handleAddCategory = (category: CategoryOption) => {
@@ -194,6 +203,10 @@ const App: React.FC = () => {
         isPaid: false
     };
     setBills(prev => [...prev, bill]);
+  };
+
+  const handleEditBill = (updatedBill: Bill) => {
+    setBills(prev => prev.map(b => b.id === updatedBill.id ? updatedBill : b));
   };
 
   const handleDeleteBill = (id: string) => {
@@ -246,6 +259,10 @@ const App: React.FC = () => {
         isReceived: false
     };
     setIncomeReminders(prev => [...prev, income]);
+  };
+
+  const handleEditIncome = (updatedIncome: IncomeReminder) => {
+    setIncomeReminders(prev => prev.map(i => i.id === updatedIncome.id ? updatedIncome : i));
   };
 
   const handleDeleteIncome = (id: string) => {
@@ -505,14 +522,14 @@ const App: React.FC = () => {
   // --- Reusable Components ---
   const MonthSelector = () => (
     <div className="flex items-center justify-center mb-6 md:mb-8">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-1 flex items-center gap-2">
-            <button onClick={() => changeMonth(-1)} className="p-2 hover:bg-slate-100 rounded-xl text-slate-500 transition-colors">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-1 flex items-center gap-2">
+            <button onClick={() => changeMonth(-1)} className="p-2 hover:bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-400 transition-colors">
                 <ChevronLeft size={20} />
             </button>
-            <span className="w-40 md:w-48 text-center font-bold text-slate-800 select-none text-sm md:text-base">
+            <span className="w-40 md:w-48 text-center font-bold text-slate-800 dark:text-white select-none text-sm md:text-base">
                 {formatCurrentMonth()}
             </span>
-            <button onClick={() => changeMonth(1)} className="p-2 hover:bg-slate-100 rounded-xl text-slate-500 transition-colors">
+            <button onClick={() => changeMonth(1)} className="p-2 hover:bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-400 transition-colors">
                 <ChevronRight size={20} />
             </button>
         </div>
@@ -534,9 +551,9 @@ const App: React.FC = () => {
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                                 {activeNotifications.map(note => (
-                                    <div key={note.id} className="flex items-center justify-between text-sm bg-white p-3 rounded-xl border border-orange-100 shadow-sm">
+                                    <div key={note.id} className="flex items-center justify-between text-sm bg-white dark:bg-slate-900 p-3 rounded-xl border border-orange-100 shadow-sm">
                                         <div>
-                                            <span className="text-slate-700 font-bold block">
+                                            <span className="text-slate-700 dark:text-slate-200 font-bold block">
                                                 {note.description}
                                             </span>
                                             {note.customAlertMessage && (note.diffDays <= 1) && (
@@ -544,7 +561,7 @@ const App: React.FC = () => {
                                             )}
                                         </div>
                                         <div className="text-right">
-                                             <span className="block text-slate-500 text-xs mb-0.5">{formatCurrency(note.amount)}</span>
+                                             <span className="block text-slate-500 dark:text-slate-400 text-xs mb-0.5">{formatCurrency(note.amount)}</span>
                                              <span className={`font-bold text-xs ${note.diffDays < 0 ? 'text-red-600' : 'text-orange-600'}`}>
                                                 {note.diffDays < 0 
                                                     ? `Venceu há ${Math.abs(note.diffDays)} dias` 
@@ -585,27 +602,27 @@ const App: React.FC = () => {
                         </div>
 
                         {/* Current Month Income */}
-                        <div className="bg-white p-5 md:p-6 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group">
+                        <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden group">
                             <div className="absolute top-4 right-4 p-2 bg-green-50 text-green-600 rounded-xl">
                                 <TrendingUp size={24} />
                             </div>
                             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 md:mb-3">Receitas</p>
-                            <h2 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">
+                            <h2 className="text-2xl md:text-3xl font-bold text-slate-800 dark:text-white tracking-tight">
                                 {formatCurrency(financialData.currentIncome)}
                             </h2>
-                            <p className="text-xs text-slate-500 mt-2 font-medium">Entradas este mês</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 font-medium">Entradas este mês</p>
                         </div>
 
                         {/* Current Month Expense */}
-                        <div className="bg-white p-5 md:p-6 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group">
+                        <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden group">
                             <div className="absolute top-4 right-4 p-2 bg-red-50 text-red-600 rounded-xl">
                                 <TrendingDown size={24} />
                             </div>
                             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 md:mb-3">Despesas</p>
-                            <h2 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">
+                            <h2 className="text-2xl md:text-3xl font-bold text-slate-800 dark:text-white tracking-tight">
                                 {formatCurrency(financialData.currentExpense)}
                             </h2>
-                             <p className="text-xs text-slate-500 mt-2 font-medium">Saídas este mês</p>
+                             <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 font-medium">Saídas este mês</p>
                         </div>
                     </div>
 
@@ -615,8 +632,8 @@ const App: React.FC = () => {
                         monthlyIncome={financialData.currentIncome}
                     />
 
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-6 border-t border-slate-200">
-                        <h2 className="text-lg md:text-xl font-bold text-slate-800">Transações recentes</h2>
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-6 border-t border-slate-200 dark:border-slate-700">
+                        <h2 className="text-lg md:text-xl font-bold text-slate-800 dark:text-white">Transações recentes</h2>
                         <button
                             onClick={() => { setActiveView('transactions'); setIsFormOpen(true); }}
                             className="no-invert hidden md:flex bg-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-bold items-center gap-2 hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/10"
@@ -627,6 +644,8 @@ const App: React.FC = () => {
                     <TransactionList 
                         transactions={financialData.monthlyTransactions.slice(0, 5)} 
                         onDelete={handleDeleteTransaction}
+                        onEdit={(t) => setEditingTransaction(t)}
+                        onUpdateStatus={handleUpdateTransactionStatus}
                         categories={categories}
                         creditCards={creditCards}
                     />
@@ -650,8 +669,8 @@ const App: React.FC = () => {
             return (
                 <div className="space-y-6 animate-fade-in">
                     <MonthSelector />
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                        <h2 className="text-lg md:text-xl font-bold text-slate-800">Transações de {formatCurrentMonth()}</h2>
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
+                        <h2 className="text-lg md:text-xl font-bold text-slate-800 dark:text-white">Transações de {formatCurrentMonth()}</h2>
                         <button
                             onClick={() => setIsFormOpen(true)}
                             className="w-full sm:w-auto bg-primary-600 text-white px-5 py-2.5 rounded-xl font-bold shadow-md hover:bg-primary-700 transition-colors flex items-center justify-center gap-2 text-sm"
@@ -662,6 +681,8 @@ const App: React.FC = () => {
                     <TransactionList 
                         transactions={financialData.monthlyTransactions} 
                         onDelete={handleDeleteTransaction}
+                        onEdit={(t) => setEditingTransaction(t)}
+                        onUpdateStatus={handleUpdateTransactionStatus}
                         categories={categories}
                         creditCards={creditCards}
                     />
@@ -671,11 +692,12 @@ const App: React.FC = () => {
             return (
                 <div className="space-y-6 animate-fade-in">
                     <div className="flex justify-between items-center mb-2">
-                        <h2 className="text-xl md:text-2xl font-bold text-slate-800">Contas a pagar</h2>
+                        <h2 className="text-xl md:text-2xl font-bold text-slate-800 dark:text-white">Contas a pagar</h2>
                     </div>
                     <BillReminders 
                         bills={bills} 
                         onAddBill={handleAddBill} 
+                        onEditBill={handleEditBill}
                         onDeleteBill={handleDeleteBill}
                         onPayBill={handlePayBill}
                         creditCards={creditCards}
@@ -687,11 +709,12 @@ const App: React.FC = () => {
             return (
                 <div className="space-y-6 animate-fade-in">
                     <div className="flex justify-between items-center mb-2">
-                        <h2 className="text-xl md:text-2xl font-bold text-slate-800">Contas a receber</h2>
+                        <h2 className="text-xl md:text-2xl font-bold text-slate-800 dark:text-white">Contas a receber</h2>
                     </div>
                     <IncomeReminders 
                         incomes={incomeReminders}
                         onAddIncome={handleAddIncome}
+                        onEditIncome={handleEditIncome}
                         onReceiveIncome={handleReceiveIncome}
                         onDeleteIncome={handleDeleteIncome}
                         categories={categories}
@@ -701,7 +724,7 @@ const App: React.FC = () => {
         case 'credit-cards':
             return (
                 <div className="space-y-6 animate-fade-in">
-                    <h2 className="text-xl md:text-2xl font-bold text-slate-800">Gerenciar cartões</h2>
+                    <h2 className="text-xl md:text-2xl font-bold text-slate-800 dark:text-white">Gerenciar cartões</h2>
                     <CreditCardManager 
                         cards={creditCards}
                         // Passing full transactions array here
@@ -725,7 +748,7 @@ const App: React.FC = () => {
         case 'ai-advisor':
             return (
                 <div className="space-y-6 animate-fade-in">
-                    <h2 className="text-xl md:text-2xl font-bold text-slate-800">Consultoria inteligente</h2>
+                    <h2 className="text-xl md:text-2xl font-bold text-slate-800 dark:text-white">Consultoria inteligente</h2>
                     <AIAdvisor transactions={financialData.monthlyTransactions} />
                     <div className="bg-indigo-50 p-6 rounded-2xl border border-indigo-100">
                         <h3 className="text-indigo-900 font-bold mb-2">Sobre o Consultor IA</h3>
@@ -739,7 +762,7 @@ const App: React.FC = () => {
         case 'settings':
             return (
                 <div className="space-y-6 animate-fade-in">
-                    <h2 className="text-xl md:text-2xl font-bold text-slate-800">Configurações</h2>
+                    <h2 className="text-xl md:text-2xl font-bold text-slate-800 dark:text-white">Configurações</h2>
                     <Settings 
                         onClearData={handleClearData}
                         onExportData={handleExportData}
@@ -756,7 +779,7 @@ const App: React.FC = () => {
 
   if (isAuthLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 dark:bg-slate-900">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900 dark:border-white"></div>
       </div>
     );
@@ -797,7 +820,7 @@ const App: React.FC = () => {
             <div className="flex items-center gap-3">
                 <button 
                     onClick={() => setIsMobileSidebarOpen(true)}
-                    className="md:hidden p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+                    className="md:hidden p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-800 rounded-lg"
                 >
                     <Menu size={24} />
                 </button>
@@ -818,7 +841,7 @@ const App: React.FC = () => {
                     </span>
                     <button
                         onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                        className="p-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                        className="p-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-800 rounded-lg transition-colors"
                         title="Alternar tema"
                     >
                         {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
@@ -837,7 +860,7 @@ const App: React.FC = () => {
         </main>
 
         {/* Global Footer */}
-        <footer className="w-full py-6 mt-auto border-t border-slate-200 dark:border-slate-800 text-center text-sm text-slate-500 dark:text-slate-400">
+        <footer className="w-full py-6 mt-auto border-t border-slate-200 dark:border-slate-700 dark:border-slate-800 text-center text-sm text-slate-500 dark:text-slate-400">
             Criado por <a href="https://www.linkedin.com/in/brunosergiosilva/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors font-medium">Bruno Sergio</a>
         </footer>
       </div>
@@ -853,10 +876,12 @@ const App: React.FC = () => {
       )}
 
       {/* Form Modal */}
-      {isFormOpen && (
+      {(isFormOpen || editingTransaction) && (
         <TransactionForm
+          initialData={editingTransaction || undefined}
           onAdd={handleAddTransactions}
-          onClose={() => setIsFormOpen(false)}
+          onEdit={handleEditTransaction}
+          onClose={() => { setIsFormOpen(false); setEditingTransaction(null); }}
           categories={categories}
           creditCards={creditCards}
         />

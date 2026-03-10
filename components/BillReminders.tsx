@@ -6,14 +6,16 @@ import { EXPENSE_CATEGORIES } from '../constants';
 interface BillRemindersProps {
   bills: Bill[];
   onAddBill: (bill: Omit<Bill, 'id' | 'isPaid'>) => void;
+  onEditBill?: (bill: Bill) => void;
   onPayBill: (id: string) => void;
   onDeleteBill: (id: string) => void;
   creditCards: CreditCardType[];
   categories: CategoryOption[];
 }
 
-export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, onPayBill, onDeleteBill, creditCards, categories }) => {
+export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, onEditBill, onPayBill, onDeleteBill, creditCards, categories }) => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingBillId, setEditingBillId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   
   // Filters
@@ -45,22 +47,19 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!description || !amount || !dueDate) return;
+  const openEditModal = (bill: Bill) => {
+    setDescription(bill.description);
+    setAmount(bill.amount.toString());
+    setDueDate(bill.dueDate);
+    setCategory(bill.category || EXPENSE_CATEGORIES[0].id);
+    setPaymentMethodId(bill.paymentMethodId || 'cash');
+    setRecurrence(bill.recurrence);
+    setCustomMessage(bill.customAlertMessage || '');
+    setEditingBillId(bill.id);
+    setIsAddModalOpen(true);
+  };
 
-    onAddBill({
-      description,
-      amount: parseFloat(amount),
-      dueDate,
-      notifyDaysBefore: parseInt(notifyDays),
-      recurrence,
-      customAlertMessage: customMessage || undefined,
-      paymentMethodId,
-      category,
-    });
-
-    // Reset Form
+  const resetForm = () => {
     setDescription('');
     setAmount('');
     setDueDate('');
@@ -68,7 +67,47 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
     setCustomMessage('');
     setPaymentMethodId('cash');
     setCategory(EXPENSE_CATEGORIES[0].id);
+    setEditingBillId(null);
+  };
+
+  const handleCloseModal = () => {
     setIsAddModalOpen(false);
+    resetForm();
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!description || !amount || !dueDate) return;
+
+    if (editingBillId && onEditBill) {
+        const billToEdit = bills.find(b => b.id === editingBillId);
+        if (billToEdit) {
+            onEditBill({
+                ...billToEdit,
+                description,
+                amount: parseFloat(amount),
+                dueDate,
+                notifyDaysBefore: parseInt(notifyDays),
+                recurrence,
+                customAlertMessage: customMessage || undefined,
+                paymentMethodId,
+                category,
+            });
+        }
+    } else {
+        onAddBill({
+          description,
+          amount: parseFloat(amount),
+          dueDate,
+          notifyDaysBefore: parseInt(notifyDays),
+          recurrence,
+          customAlertMessage: customMessage || undefined,
+          paymentMethodId,
+          category,
+        });
+    }
+
+    handleCloseModal();
   };
 
   const getDaysDiff = (dateStr: string) => {
@@ -158,7 +197,7 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
 
     // Empty cells for days before the 1st
     for (let i = 0; i < firstDay; i++) {
-        days.push(<div key={`empty-${i}`} className="h-24 bg-slate-50 border border-slate-100" />);
+        days.push(<div key={`empty-${i}`} className="h-24 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800" />);
     }
 
     // Days of the month
@@ -167,17 +206,16 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
         const billsForDay = filteredBills.filter(b => b.dueDate === currentDateStr);
         
         days.push(
-            <div key={d} className="h-24 bg-white border border-slate-100 p-1 relative hover:bg-slate-50 transition-colors group">
+            <div key={d} className="h-24 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-1 relative hover:bg-slate-50 dark:bg-slate-950 transition-colors group">
                 <span className="text-xs font-semibold text-slate-400 absolute top-1 left-2">{d}</span>
                 <div className="mt-4 space-y-1 overflow-y-auto max-h-[calc(100%-1rem)]">
                     {billsForDay.map(bill => (
                         <div 
                             key={bill.id} 
-                            className={`text-[10px] px-1 py-0.5 rounded truncate cursor-pointer ${
-                                bill.isPaid ? 'bg-green-100 text-green-700 line-through opacity-70' : 'bg-red-100 text-red-700 font-medium'
+                            className={`text-[10px] px-1 py-0.5 rounded truncate ${
+                                bill.isPaid ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 line-through opacity-70' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 font-medium'
                             }`}
                             title={`${bill.description} - ${formatCurrency(bill.amount)}`}
-                            onClick={() => !bill.isPaid && onPayBill(bill.id)}
                         >
                             {bill.description}
                         </div>
@@ -188,15 +226,15 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
     }
 
     return (
-        <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-            <div className="flex items-center justify-between p-4 bg-slate-50 border-b border-slate-200">
-                <button onClick={() => changeMonth(-1)} className="p-1 hover:bg-slate-200 rounded text-slate-600">&lt;</button>
-                <span className="font-semibold text-slate-700 capitalize">
+        <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm">
+            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-700">
+                <button onClick={() => changeMonth(-1)} className="p-1 hover:bg-slate-200 rounded text-slate-600 dark:text-slate-300">&lt;</button>
+                <span className="font-semibold text-slate-700 dark:text-slate-200 capitalize">
                     {currentMonth.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
                 </span>
-                <button onClick={() => changeMonth(1)} className="p-1 hover:bg-slate-200 rounded text-slate-600">&gt;</button>
+                <button onClick={() => changeMonth(1)} className="p-1 hover:bg-slate-200 rounded text-slate-600 dark:text-slate-300">&gt;</button>
             </div>
-            <div className="grid grid-cols-7 text-center bg-slate-100 text-xs font-bold text-slate-500 py-3 border-b border-slate-200 uppercase tracking-wide">
+            <div className="grid grid-cols-7 text-center bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-500 dark:text-slate-400 py-3 border-b border-slate-200 dark:border-slate-700 uppercase tracking-wide">
                 <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
             </div>
             <div className="grid grid-cols-7">
@@ -207,14 +245,14 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mb-8">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden mb-8">
       {/* Header with Controls */}
-      <div className="px-6 py-5 border-b border-slate-100 flex flex-col xl:flex-row justify-between items-center gap-4 bg-white">
+      <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex flex-col xl:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-900">
         <div className="flex items-center gap-3">
              <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
                 <CalendarIcon size={24} />
              </div>
-             <h3 className="text-lg font-bold text-slate-800">
+             <h3 className="text-lg font-bold text-slate-800 dark:text-white">
                Suas contas
              </h3>
         </div>
@@ -226,7 +264,7 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
                  <select 
                     value={periodFilter}
                     onChange={(e) => setPeriodFilter(e.target.value as any)}
-                    className="bg-slate-100 text-slate-700 text-xs font-bold py-2 px-3 rounded-xl border-none outline-none cursor-pointer hover:bg-slate-200 transition-colors"
+                    className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold py-2 px-3 rounded-xl border-none outline-none cursor-pointer hover:bg-slate-200 transition-colors"
                  >
                     <option value="all">Todo Período</option>
                     <option value="week">Próx. 7 dias</option>
@@ -237,7 +275,7 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
                  <select 
                     value={filterPayment}
                     onChange={(e) => setFilterPayment(e.target.value)}
-                    className="bg-slate-100 text-slate-700 text-xs font-bold py-2 px-3 rounded-xl border-none outline-none cursor-pointer hover:bg-slate-200 transition-colors"
+                    className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold py-2 px-3 rounded-xl border-none outline-none cursor-pointer hover:bg-slate-200 transition-colors"
                  >
                     <option value="all">Todos Pagamentos</option>
                     <option value="cash">Dinheiro / Débito</option>
@@ -246,22 +284,22 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
                     ))}
                  </select>
 
-                <div className="bg-slate-100 p-1 rounded-xl flex">
+                <div className="bg-slate-100 dark:bg-slate-800 p-1 rounded-xl flex">
                      <button
                         onClick={() => setFilterStatus('all')}
-                        className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${filterStatus === 'all' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${filterStatus === 'all' ? 'bg-white dark:bg-slate-900 shadow-sm text-slate-800 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-200'}`}
                      >
                         Todas
                      </button>
                      <button
                         onClick={() => setFilterStatus('pending')}
-                        className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${filterStatus === 'pending' ? 'bg-white shadow-sm text-amber-600' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${filterStatus === 'pending' ? 'bg-white dark:bg-slate-900 shadow-sm text-amber-600' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-200'}`}
                      >
                         Pendentes
                      </button>
                      <button
                         onClick={() => setFilterStatus('paid')}
-                        className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${filterStatus === 'paid' ? 'bg-white shadow-sm text-green-600' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${filterStatus === 'paid' ? 'bg-white dark:bg-slate-900 shadow-sm text-green-600' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-200'}`}
                      >
                         Pagas
                      </button>
@@ -269,17 +307,17 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
             </div>
             
             {/* View Toggle */}
-            <div className="bg-slate-100 p-1 rounded-xl flex">
+            <div className="bg-slate-100 dark:bg-slate-800 p-1 rounded-xl flex">
                 <button
                     onClick={() => setViewMode('list')}
-                    className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-400 hover:text-slate-600'}`}
+                    className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white dark:bg-slate-900 shadow-sm text-slate-800 dark:text-white' : 'text-slate-400 hover:text-slate-600 dark:text-slate-300'}`}
                     title="Lista"
                 >
                     <List size={18} />
                 </button>
                 <button
                     onClick={() => setViewMode('calendar')}
-                    className={`p-2 rounded-lg transition-all ${viewMode === 'calendar' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-400 hover:text-slate-600'}`}
+                    className={`p-2 rounded-lg transition-all ${viewMode === 'calendar' ? 'bg-white dark:bg-slate-900 shadow-sm text-slate-800 dark:text-white' : 'text-slate-400 hover:text-slate-600 dark:text-slate-300'}`}
                     title="Calendário"
                 >
                     <CalendarIcon size={18} />
@@ -298,10 +336,10 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
       {/* Add Bill Modal */}
       {isAddModalOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-in">
-                <div className="px-6 py-5 bg-white border-b border-slate-100 flex justify-between items-center sticky top-0 z-10">
-                    <h3 className="text-xl font-bold text-slate-800">Adicionar conta</h3>
-                    <button onClick={() => setIsAddModalOpen(false)} className="p-2 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-500 transition-colors">
+             <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-in">
+                <div className="px-6 py-5 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center sticky top-0 z-10">
+                    <h3 className="text-xl font-bold text-slate-800 dark:text-white">Adicionar conta</h3>
+                    <button onClick={() => setIsAddModalOpen(false)} className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-full text-slate-500 dark:text-slate-400 transition-colors">
                         <X size={20} />
                     </button>
                 </div>
@@ -315,7 +353,7 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
                         placeholder="Ex: Aluguel, Internet..."
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all font-medium"
+                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all font-medium"
                         />
                     </div>
 
@@ -328,7 +366,7 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
                         placeholder="0.00"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all font-bold text-lg"
+                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all font-bold text-lg"
                         />
                     </div>
 
@@ -338,7 +376,7 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
                             <select
                                 value={category}
                                 onChange={(e) => setCategory(e.target.value)}
-                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all font-medium text-sm"
+                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all font-medium text-sm"
                             >
                                 {expenseCategories.map((cat) => (
                                     <option key={cat.id} value={cat.id}>
@@ -352,7 +390,7 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
                             <select
                                 value={paymentMethodId}
                                 onChange={(e) => setPaymentMethodId(e.target.value)}
-                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all font-medium text-sm"
+                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all font-medium text-sm"
                             >
                                 <option value="cash">Dinheiro / Débito</option>
                                 {creditCards.map(card => (
@@ -370,7 +408,7 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
                             required
                             value={dueDate}
                             onChange={(e) => setDueDate(e.target.value)}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all font-medium text-sm"
+                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all font-medium text-sm"
                             />
                         </div>
                         <div>
@@ -379,13 +417,13 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
                                 <select
                                     value={recurrence}
                                     onChange={(e) => setRecurrence(e.target.value as RecurrenceType)}
-                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all font-medium text-sm appearance-none"
+                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all font-medium text-sm appearance-none"
                                 >
                                     <option value="none">Única</option>
                                     <option value="monthly">Mensal</option>
                                     <option value="yearly">Anual</option>
                                 </select>
-                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500 dark:text-slate-400">
                                     <Repeat size={16} />
                                 </div>
                              </div>
@@ -401,7 +439,7 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
                         placeholder="Ex: Pagar antes das 16h para evitar multa"
                         value={customMessage}
                         onChange={(e) => setCustomMessage(e.target.value)}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all text-sm"
+                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all text-sm"
                         />
                     </div>
 
@@ -424,7 +462,7 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
             <div className="space-y-3">
                 {filteredBills.length === 0 ? (
                 <div className="py-12 text-center text-slate-400">
-                    <div className="bg-slate-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <div className="bg-slate-100 dark:bg-slate-800 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3">
                         <CalendarIcon size={24} className="opacity-50" />
                     </div>
                     <p className="font-medium">
@@ -448,32 +486,39 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
                                 : 'bg-slate-300';
 
                     return (
-                    <div key={bill.id} className={`p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all rounded-2xl border relative overflow-hidden group ${bill.isPaid ? 'bg-slate-50 border-slate-100 opacity-80' : 'bg-white border-slate-100 hover:border-indigo-200 hover:shadow-sm'}`}>
+                    <div key={bill.id} className={`p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all rounded-2xl border relative overflow-hidden group ${bill.isPaid ? 'bg-slate-50 dark:bg-slate-950 border-slate-100 dark:border-slate-800 opacity-80' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:border-indigo-200 hover:shadow-sm'}`}>
                         {/* Status Strip */}
                         <div className={`absolute left-0 top-0 bottom-0 w-1 ${statusColorClass}`} />
                         
                         <div className="flex items-start gap-4 pl-3">
-                            {/* Quick Pay Checkbox */}
+                            {/* Status Dropdown */}
                             <div className="pt-1">
-                                <div 
-                                    onClick={() => !bill.isPaid && onPayBill(bill.id)}
-                                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center cursor-pointer transition-all ${
+                                <select
+                                    value={bill.isPaid ? 'Pago' : 'Pendente'}
+                                    onChange={(e) => {
+                                        if (e.target.value === 'Pago' && !bill.isPaid) {
+                                            onPayBill(bill.id);
+                                        }
+                                        // Note: Currently no onUnpayBill exists, so we only handle paying
+                                    }}
+                                    className={`appearance-none px-2 py-1 rounded-full text-[10px] md:text-xs font-bold outline-none cursor-pointer border-2 transition-colors ${
                                         bill.isPaid 
-                                            ? 'bg-green-500 border-green-500' 
-                                            : 'border-slate-300 hover:border-green-500'
+                                            ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800' 
+                                            : 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800'
                                     }`}
                                 >
-                                    {bill.isPaid && <Check size={14} className="text-white" />}
-                                </div>
+                                    <option value="Pendente">Pendente</option>
+                                    <option value="Pago">Pago</option>
+                                </select>
                             </div>
 
-                            <div className={`p-3 rounded-xl shrink-0 ${bill.isPaid ? 'bg-green-100 text-green-600' : isLate ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-500'}`}>
+                            <div className={`p-3 rounded-xl shrink-0 ${bill.isPaid ? 'bg-green-100 text-green-600' : isLate ? 'bg-red-100 text-red-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
                                 {bill.recurrence !== 'none' ? <Repeat size={20} /> : <CalendarIcon size={20} />}
                             </div>
                             
                             <div>
                                 <div className="flex items-center gap-2 mb-1">
-                                    <p className={`font-bold text-base ${bill.isPaid ? 'text-slate-500 line-through' : 'text-slate-800'}`}>
+                                    <p className={`font-bold text-base ${bill.isPaid ? 'text-slate-500 dark:text-slate-400 line-through' : 'text-slate-800 dark:text-white'}`}>
                                         {bill.description}
                                     </p>
                                     {bill.isPaid && <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-green-200">PAGO</span>}
@@ -481,9 +526,9 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
                                 </div>
                                 
                                 <div className="flex flex-wrap items-center gap-3 text-xs">
-                                    <span className="text-slate-500 bg-slate-100 px-2 py-1 rounded-md font-medium flex items-center gap-1">
+                                    <span className="text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md font-medium flex items-center gap-1">
                                         <CalendarIcon size={12} />
-                                        {new Date(bill.dueDate).toLocaleDateString('pt-BR')}
+                                        {new Date(bill.dueDate + 'T12:00:00').toLocaleDateString('pt-BR')}
                                     </span>
                                     {bill.recurrence !== 'none' && (
                                         <span className="text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md font-bold flex items-center gap-1">
@@ -491,7 +536,7 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
                                             {getRecurrenceLabel(bill.recurrence)}
                                         </span>
                                     )}
-                                    <span className="text-slate-500 bg-slate-100 px-2 py-1 rounded-md font-medium flex items-center gap-1">
+                                    <span className="text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md font-medium flex items-center gap-1">
                                         {(!bill.paymentMethodId || bill.paymentMethodId === 'cash') ? (
                                             <Banknote size={12} />
                                         ) : (
@@ -500,7 +545,7 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
                                         {getPaymentLabel(bill.paymentMethodId)}
                                     </span>
                                     {bill.category && (
-                                        <span className="text-slate-500 bg-slate-100 px-2 py-1 rounded-md font-medium flex items-center gap-1">
+                                        <span className="text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md font-medium flex items-center gap-1">
                                             {expenseCategories.find(c => c.id === bill.category)?.label || bill.category}
                                         </span>
                                     )}
@@ -514,7 +559,7 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
                                 
                                 {/* Custom Message Display */}
                                 {bill.customAlertMessage && !bill.isPaid && (isLate || isNear) && (
-                                    <div className="flex items-start gap-1.5 mt-2 text-xs text-slate-500 bg-slate-50 p-2 rounded-lg">
+                                    <div className="flex items-start gap-1.5 mt-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950 p-2 rounded-lg">
                                         <AlertCircle size={14} className="shrink-0 mt-0.5" />
                                         <span className="italic">"{bill.customAlertMessage}"</span>
                                     </div>
@@ -525,12 +570,12 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
                         <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto pl-14 sm:pl-0">
                             <div className="text-right">
                                 <span className="text-xs text-slate-400 font-medium block uppercase tracking-wide">Valor</span>
-                                <span className={`font-bold text-lg ${bill.isPaid ? 'text-slate-400' : 'text-slate-800'}`}>
+                                <span className={`font-bold text-lg ${bill.isPaid ? 'text-slate-400' : 'text-slate-800 dark:text-white'}`}>
                                     {formatCurrency(bill.amount)}
                                 </span>
                             </div>
                             
-                            <div className="flex items-center gap-2 pl-4 border-l border-slate-100">
+                            <div className="flex items-center gap-2 pl-4 border-l border-slate-100 dark:border-slate-800">
                                 <button
                                     onClick={() => onDeleteBill(bill.id)}
                                     className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"

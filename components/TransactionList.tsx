@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { Trash2, ArrowUpCircle, ArrowDownCircle, CreditCard, Banknote } from 'lucide-react';
-import { Transaction, TransactionType, CategoryOption, CreditCard as CreditCardType } from '../types';
+import { Trash2, ArrowUpCircle, ArrowDownCircle, CreditCard, Banknote, ChevronDown, Pencil } from 'lucide-react';
+import { Transaction, TransactionType, CategoryOption, CreditCard as CreditCardType, TransactionStatus } from '../types';
 
 interface TransactionListProps {
   transactions: Transaction[];
   onDelete: (id: string) => void;
+  onEdit?: (transaction: Transaction) => void;
+  onUpdateStatus?: (id: string, status: TransactionStatus) => void;
   categories: CategoryOption[];
   creditCards: CreditCardType[];
 }
 
-export const TransactionList: React.FC<TransactionListProps> = ({ transactions, onDelete, categories, creditCards }) => {
+export const TransactionList: React.FC<TransactionListProps> = ({ transactions, onDelete, onEdit, onUpdateStatus, categories, creditCards }) => {
   const [filterPayment, setFilterPayment] = useState<string>('all');
 
   const getCategoryLabel = (id: string) => categories.find(c => c.id === id)?.label || id;
@@ -45,22 +47,22 @@ export const TransactionList: React.FC<TransactionListProps> = ({ transactions, 
 
   if (transactions.length === 0) {
     return (
-      <div className="text-center py-12 bg-white rounded-xl border border-slate-100">
-        <div className="bg-slate-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+      <div className="text-center py-12 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
+        <div className="bg-slate-100 dark:bg-slate-800 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
           <span className="text-2xl">💸</span>
         </div>
-        <h3 className="text-lg font-medium text-slate-800">Nenhuma transação ainda</h3>
-        <p className="text-slate-500">Adicione suas receitas e despesas para começar.</p>
+        <h3 className="text-lg font-medium text-slate-800 dark:text-white">Nenhuma transação ainda</h3>
+        <p className="text-slate-500 dark:text-slate-400">Adicione suas receitas e despesas para começar.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden relative">
-      <div className="px-4 py-3 md:px-6 md:py-4 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/50">
+    <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden relative">
+      <div className="px-4 py-3 md:px-6 md:py-4 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/50">
         <div className="flex items-center gap-2">
-            <h3 className="text-base md:text-lg font-semibold text-slate-800">Histórico</h3>
-            <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-full">
+            <h3 className="text-base md:text-lg font-semibold text-slate-800 dark:text-white">Histórico</h3>
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-full">
             {filteredTransactions.length} registros
             </span>
         </div>
@@ -69,7 +71,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ transactions, 
         <select
             value={filterPayment}
             onChange={(e) => setFilterPayment(e.target.value)}
-            className="w-full sm:w-auto bg-white border border-slate-200 text-slate-700 text-xs font-bold py-2 px-3 rounded-xl outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
+            className="w-full sm:w-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold py-2 px-3 rounded-xl outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
         >
             <option value="all">Todas as formas de pagto.</option>
             <option value="cash">Dinheiro / Débito</option>
@@ -82,7 +84,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ transactions, 
 
       <div className="overflow-x-auto">
         <table className="w-full text-left">
-          <thead className="bg-slate-50 text-slate-500 text-xs uppercase font-semibold">
+          <thead className="bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 text-xs uppercase font-semibold">
             <tr>
               <th className="px-4 py-3 md:px-6 whitespace-nowrap">Data</th>
               <th className="px-4 py-3 md:px-6 min-w-[140px]">Descrição</th>
@@ -96,7 +98,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ transactions, 
           <tbody className="divide-y divide-slate-100">
             {filteredTransactions.length === 0 ? (
                 <tr>
-                    <td colSpan={7} className="px-6 py-8 text-center text-slate-500 italic">
+                    <td colSpan={7} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400 italic">
                         Nenhuma transação encontrada com este filtro.
                     </td>
                 </tr>
@@ -106,8 +108,8 @@ export const TransactionList: React.FC<TransactionListProps> = ({ transactions, 
                 
                 return (
                 <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-4 py-3 md:px-6 md:py-4 text-xs md:text-sm text-slate-600 whitespace-nowrap">
-                    {new Date(t.date).toLocaleDateString('pt-BR')}
+                    <td className="px-4 py-3 md:px-6 md:py-4 text-xs md:text-sm text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                    {new Date(t.date + 'T12:00:00').toLocaleDateString('pt-BR')}
                     </td>
                     <td className="px-4 py-3 md:px-6 md:py-4">
                     <div className="flex items-center gap-2 md:gap-3">
@@ -117,7 +119,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ transactions, 
                         <ArrowDownCircle className="text-red-500 w-4 h-4 md:w-5 md:h-5 shrink-0" />
                         )}
                         <div>
-                            <span className="font-medium text-slate-800 block text-xs md:text-sm max-w-[150px] md:max-w-xs truncate" title={t.description}>
+                            <span className="font-medium text-slate-800 dark:text-white block text-xs md:text-sm max-w-[150px] md:max-w-xs truncate" title={t.description}>
                                 {t.description}
                             </span>
                             {t.installments && (
@@ -143,7 +145,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ transactions, 
                     </td>
                     <td className="px-4 py-3 md:px-6 md:py-4">
                         {t.type === TransactionType.EXPENSE && (
-                            <div className="flex items-center gap-1.5 text-xs md:text-sm text-slate-600">
+                            <div className="flex items-center gap-1.5 text-xs md:text-sm text-slate-600 dark:text-slate-300">
                                 {paymentInfo.isCard ? (
                                     <CreditCard size={14} style={{ color: paymentInfo.color }} />
                                 ) : (
@@ -157,15 +159,33 @@ export const TransactionList: React.FC<TransactionListProps> = ({ transactions, 
                         {t.type === TransactionType.INCOME && <span className="text-slate-400 text-xs">-</span>}
                     </td>
                     <td className="px-4 py-3 md:px-6 md:py-4">
-                        {t.status && (
+                        {t.status && onUpdateStatus ? (
+                            <div className="relative inline-block w-full max-w-[120px]">
+                                <select
+                                    value={t.status}
+                                    onChange={(e) => onUpdateStatus(t.id, e.target.value as TransactionStatus)}
+                                    className={`appearance-none w-full px-2 py-1 pr-6 rounded-full text-[10px] md:text-xs font-bold outline-none cursor-pointer border-2 transition-colors ${
+                                        t.status === 'Pago' || t.status === 'Recebido' ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800' :
+                                        t.status === 'Pendente' ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800' :
+                                        'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800'
+                                    }`}
+                                >
+                                    <option value="Pendente">Pendente</option>
+                                    <option value="Pago">Pago</option>
+                                    <option value="Recebido">Recebido</option>
+                                    <option value="Cancelado">Cancelado</option>
+                                </select>
+                                <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-50" />
+                            </div>
+                        ) : t.status ? (
                             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] md:text-xs font-medium whitespace-nowrap ${
-                                t.status === 'Pago' || t.status === 'Recebido' ? 'bg-green-100 text-green-700' :
-                                t.status === 'Pendente' ? 'bg-yellow-100 text-yellow-700' :
-                                'bg-red-100 text-red-700'
+                                t.status === 'Pago' || t.status === 'Recebido' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
+                                t.status === 'Pendente' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
+                                'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
                             }`}>
                                 {t.status}
                             </span>
-                        )}
+                        ) : null}
                     </td>
                     <td className="px-4 py-3 md:px-6 md:py-4 text-right">
                     <span className={`font-semibold text-xs md:text-sm whitespace-nowrap ${t.type === TransactionType.INCOME ? 'text-green-600' : 'text-red-600'}`}>
@@ -173,13 +193,24 @@ export const TransactionList: React.FC<TransactionListProps> = ({ transactions, 
                     </span>
                     </td>
                     <td className="px-4 py-3 md:px-6 md:py-4 text-center">
-                    <button
-                        onClick={() => onDelete(t.id)}
-                        className="text-slate-400 hover:text-red-500 transition-colors p-1.5 md:p-2 hover:bg-red-50 rounded-full"
-                        title="Excluir"
-                    >
-                        <Trash2 size={16} />
-                    </button>
+                        <div className="flex items-center justify-center gap-2">
+                            {onEdit && (
+                                <button
+                                    onClick={() => onEdit(t)}
+                                    className="text-slate-400 hover:text-indigo-500 transition-colors p-1.5 md:p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-full"
+                                    title="Editar"
+                                >
+                                    <Pencil size={16} />
+                                </button>
+                            )}
+                            <button
+                                onClick={() => onDelete(t.id)}
+                                className="text-slate-400 hover:text-red-500 transition-colors p-1.5 md:p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full"
+                                title="Excluir"
+                            >
+                                <Trash2 size={16} />
+                            </button>
+                        </div>
                     </td>
                 </tr>
                 )})

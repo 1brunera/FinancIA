@@ -34,10 +34,10 @@ export const AIAdvisor: React.FC<AIAdvisorProps> = ({ transactions }) => {
       const isHeader = line.trim().startsWith('#') || line.trim().match(/^\d+\./);
       
       const className = isHeader 
-        ? "font-bold text-slate-800 mt-2 block" 
+        ? "font-bold text-slate-800 dark:text-white mt-2 block" 
         : isBullet 
-          ? "ml-4 text-slate-600 block mb-1"
-          : "text-slate-600 block mb-1";
+          ? "ml-4 text-slate-600 dark:text-slate-300 block mb-1"
+          : "text-slate-600 dark:text-slate-300 block mb-1";
           
        // Remove markdown symbols for cleaner view
        content = content.replace(/^#+\s/, '').replace(/^[\*\-]\s/, '• ');
@@ -48,7 +48,7 @@ export const AIAdvisor: React.FC<AIAdvisorProps> = ({ transactions }) => {
         <p key={i} className={className}>
           {parts.map((part, j) => {
             if (part.startsWith('**') && part.endsWith('**')) {
-              return <strong key={j} className="text-slate-800">{part.slice(2, -2)}</strong>;
+              return <strong key={j} className="text-slate-800 dark:text-white">{part.slice(2, -2)}</strong>;
             }
             return part;
           })}
@@ -63,12 +63,12 @@ export const AIAdvisor: React.FC<AIAdvisorProps> = ({ transactions }) => {
         <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-indigo-100 rounded-full blur-2xl opacity-50"></div>
 
         <div className="flex items-start gap-4 relative z-10">
-            <div className="bg-white p-3 rounded-lg shadow-sm text-indigo-600">
+            <div className="bg-white dark:bg-slate-900 p-3 rounded-lg shadow-sm text-indigo-600">
                 <Sparkles size={24} />
             </div>
             <div className="flex-1">
-                <h3 className="text-lg font-bold text-slate-800 mb-2">Consultor Financeiro AI</h3>
-                <p className="text-sm text-slate-600 mb-4">
+                <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">Consultor Financeiro AI</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">
                     Obtenha insights personalizados sobre seus hábitos de consumo com a inteligência do Google Gemini.
                 </p>
 

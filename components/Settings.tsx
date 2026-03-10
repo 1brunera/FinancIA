@@ -32,17 +32,17 @@ export const Settings: React.FC<SettingsProps> = ({ onClearData, onExportData, o
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
-      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-        <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800">
+        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
           <DollarSign className="text-primary-500" /> Preferências Regionais
         </h3>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Moeda Principal</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Moeda Principal</label>
             <select
               value={currency}
               onChange={(e) => setCurrency(e.target.value)}
-              className="w-full md:w-1/2 p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+              className="w-full md:w-1/2 p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
             >
               <option value="BRL">Real Brasileiro (R$)</option>
               <option value="USD">Dólar Americano ($)</option>
@@ -52,23 +52,23 @@ export const Settings: React.FC<SettingsProps> = ({ onClearData, onExportData, o
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-        <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800">
+        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
           <Sun className="text-orange-500" /> Aparência
         </h3>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Tema</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Tema</label>
             <div className="flex gap-4">
               <button
                 onClick={() => onThemeChange('light')}
-                className={`flex-1 py-3 px-4 rounded-xl border flex items-center justify-center gap-2 transition-all ${theme === 'light' ? 'bg-primary-50 border-primary-200 text-primary-700 font-bold' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                className={`flex-1 py-3 px-4 rounded-xl border flex items-center justify-center gap-2 transition-all ${theme === 'light' ? 'bg-primary-50 border-primary-200 text-primary-700 font-bold' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:bg-slate-950'}`}
               >
                 <Sun size={18} /> Claro
               </button>
               <button
                 onClick={() => onThemeChange('dark')}
-                className={`flex-1 py-3 px-4 rounded-xl border flex items-center justify-center gap-2 transition-all ${theme === 'dark' ? 'bg-slate-800 border-slate-700 text-white font-bold' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                className={`flex-1 py-3 px-4 rounded-xl border flex items-center justify-center gap-2 transition-all ${theme === 'dark' ? 'bg-slate-800 border-slate-700 text-white font-bold' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:bg-slate-950'}`}
               >
                 <Moon size={18} /> Escuro
               </button>
@@ -77,14 +77,14 @@ export const Settings: React.FC<SettingsProps> = ({ onClearData, onExportData, o
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-        <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800">
+        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
           <Bell className="text-indigo-500" /> Notificações
         </h3>
         <div className="flex items-center justify-between">
           <div>
-            <p className="font-medium text-slate-800">Alertas de Vencimento</p>
-            <p className="text-sm text-slate-500">Receba avisos sobre contas próximas do vencimento.</p>
+            <p className="font-medium text-slate-800 dark:text-white">Alertas de Vencimento</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Receba avisos sobre contas próximas do vencimento.</p>
           </div>
           <label className="relative inline-flex items-center cursor-pointer">
             <input 
@@ -93,40 +93,40 @@ export const Settings: React.FC<SettingsProps> = ({ onClearData, onExportData, o
               checked={notificationsEnabled}
               onChange={(e) => setNotificationsEnabled(e.target.checked)}
             />
-            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-slate-900 after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
           </label>
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-        <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800">
+        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
           <Save className="text-blue-500" /> Dados e Backup
         </h3>
         
         <div className="space-y-6">
-          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-200">
+          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-700">
             <div>
-              <p className="font-bold text-slate-800">Exportar Dados</p>
-              <p className="text-sm text-slate-500">Baixe um arquivo CSV com suas transações.</p>
+              <p className="font-bold text-slate-800 dark:text-white">Exportar Dados</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Baixe um arquivo CSV com suas transações.</p>
             </div>
             <button 
               onClick={onExportData}
-              className="flex items-center gap-2 bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-xl hover:bg-slate-50 transition-colors font-medium text-sm"
+              className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-300 text-slate-700 dark:text-slate-200 px-4 py-2 rounded-xl hover:bg-slate-50 dark:bg-slate-950 transition-colors font-medium text-sm"
             >
               <Download size={16} /> Exportar CSV
             </button>
           </div>
 
-          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+          <div className="p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
             <div>
-              <p className="font-bold text-slate-800">Importar Dados</p>
-              <p className="text-sm text-slate-500">Cole o conteúdo do seu arquivo CSV exportado anteriormente.</p>
+              <p className="font-bold text-slate-800 dark:text-white">Importar Dados</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Cole o conteúdo do seu arquivo CSV exportado anteriormente.</p>
             </div>
             <textarea
               value={importText}
               onChange={(e) => setImportText(e.target.value)}
               placeholder="Cole o CSV aqui..."
-              className="w-full h-32 p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-sm font-mono"
+              className="w-full h-32 p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-sm font-mono"
             />
             <button 
               onClick={handleImport}
@@ -164,7 +164,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClearData, onExportData, o
       {/* Reset Confirmation Modal */}
       {isResetModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl animate-fade-in-up">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md p-6 shadow-2xl animate-fade-in-up">
             <div className="flex justify-between items-center mb-6">
               <div className="flex items-center gap-3 text-red-600">
                 <div className="bg-red-100 p-2 rounded-full">
@@ -174,14 +174,14 @@ export const Settings: React.FC<SettingsProps> = ({ onClearData, onExportData, o
               </div>
               <button 
                 onClick={() => setIsResetModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-2 rounded-full transition-colors"
+                className="text-slate-400 hover:text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:bg-slate-800 p-2 rounded-full transition-colors"
               >
                 <X size={20} />
               </button>
             </div>
             
-            <p className="text-slate-600 mb-6 leading-relaxed">
-              Tem certeza absoluta que deseja apagar <strong className="text-slate-800">TODOS</strong> os seus dados? 
+            <p className="text-slate-600 dark:text-slate-300 mb-6 leading-relaxed">
+              Tem certeza absoluta que deseja apagar <strong className="text-slate-800 dark:text-white">TODOS</strong> os seus dados? 
               Isso inclui todas as transações, categorias, cartões e configurações. 
               <br/><br/>
               <span className="text-red-600 font-medium">Esta ação não pode ser desfeita.</span>
@@ -190,7 +190,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClearData, onExportData, o
             <div className="flex gap-3">
               <button
                 onClick={() => setIsResetModalOpen(false)}
-                className="flex-1 px-4 py-3 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
+                className="flex-1 px-4 py-3 rounded-xl font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 transition-colors"
               >
                 Cancelar
               </button>
