@@ -61,12 +61,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Header */}
       <div className="h-16 flex items-center justify-between md:justify-center border-b border-gray-900 px-4">
         <div className="flex items-center gap-2 overflow-hidden">
-          <div className="bg-primary-600 p-1.5 rounded-lg shrink-0">
-             <Wallet className="w-6 h-6 text-white" />
-          </div>
-          {(isExpanded || isMobileOpen) && (
-            <span className="font-bold text-xl tracking-tight whitespace-nowrap opacity-100 transition-opacity duration-300">
-              Finanças<span className="text-primary-500">IA</span>
+          {(isExpanded || isMobileOpen) ? (
+            <span className="font-bold text-2xl tracking-tight whitespace-nowrap opacity-100 transition-opacity duration-300">
+              <span className="text-white">Finance</span><span className="text-blue-500">IA</span>
+            </span>
+          ) : (
+            <span className="font-bold text-2xl tracking-tight whitespace-nowrap">
+              <span className="text-white">F</span><span className="text-blue-500">IA</span>
             </span>
           )}
         </div>

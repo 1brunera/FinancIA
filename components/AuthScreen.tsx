@@ -8,11 +8,8 @@ export const AuthScreen: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
       <div className="sm:mx-auto sm:w-full sm:max-w-md flex flex-col items-center">
-        <div className="bg-slate-900 dark:bg-white p-3 rounded-2xl shadow-lg mb-4">
-          <PiggyBank size={40} className="text-white dark:text-slate-900" />
-        </div>
-        <h2 className="mt-2 text-center text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-          Finanças IA
+        <h2 className="mt-2 text-center text-4xl font-extrabold tracking-tight">
+          <span className="text-slate-900 dark:text-white">Finance</span><span className="text-blue-500">IA</span>
         </h2>
         <p className="mt-2 text-center text-sm text-slate-600 dark:text-slate-400">
           Acesse sua conta para gerenciar suas finanças
