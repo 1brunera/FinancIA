@@ -1,0 +1,9 @@
+html.dark {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+html.dark img:not(.no-invert img),
+html.dark video:not(.no-invert video),
+html.dark .no-invert {
+  filter: invert(1) hue-rotate(180deg);
+}

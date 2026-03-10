@@ -1,0 +1,852 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { Plus, Bell, Calendar, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Wallet, Menu, History, PiggyBank } from 'lucide-react';
+import { Transaction, TransactionType, CategoryOption, Bill, CreditCard, IncomeReminder, Investment, InvestmentGoal } from './types';
+import { MOCK_TRANSACTIONS, DEFAULT_CATEGORIES, MOCK_INVESTMENTS, MOCK_GOALS } from './constants';
+import { TransactionForm } from './components/TransactionForm';
+import { TransactionList } from './components/TransactionList';
+import { FinancialCharts } from './components/FinancialCharts';
+import { AIAdvisor } from './components/AIAdvisor';
+import { CategoryManager } from './components/CategoryManager';
+import { BillReminders } from './components/BillReminders';
+import { IncomeReminders } from './components/IncomeReminders';
+import { CreditCardManager } from './components/CreditCardManager';
+import { InvestmentsDashboard } from './components/InvestmentsDashboard';
+import { Sidebar } from './components/Sidebar';
+import { Settings } from './components/Settings';
+import { supabase } from './services/supabase';
+import { AuthScreen } from './components/AuthScreen';
+import { Session } from '@supabase/supabase-js';
+
+const App: React.FC = () => {
+  // --- Auth State ---
+  const [session, setSession] = useState<Session | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setIsAuthLoading(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // --- State Management ---
+  const [activeView, setActiveView] = useState('dashboard');
+  
+  // Sidebar states
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(true); // Desktop state
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false); // Mobile state
+  
+  // Dashboard Date Filter
+  const [currentDate, setCurrentDate] = useState(new Date());
+  
+  // Current Time for Header
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const [transactions, setTransactions] = useState<Transaction[]>(() => {
+    try {
+        const saved = localStorage.getItem('finance_transactions');
+        return saved ? JSON.parse(saved) : MOCK_TRANSACTIONS;
+    } catch {
+        return MOCK_TRANSACTIONS;
+    }
+  });
+
+  const [categories, setCategories] = useState<CategoryOption[]>(() => {
+    try {
+        const saved = localStorage.getItem('finance_categories');
+        return saved ? JSON.parse(saved) : DEFAULT_CATEGORIES;
+    } catch {
+        return DEFAULT_CATEGORIES;
+    }
+  });
+
+  const [bills, setBills] = useState<Bill[]>(() => {
+    try {
+      const saved = localStorage.getItem('finance_bills');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [incomeReminders, setIncomeReminders] = useState<IncomeReminder[]>(() => {
+    try {
+      const saved = localStorage.getItem('finance_income_reminders');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [creditCards, setCreditCards] = useState<CreditCard[]>(() => {
+    try {
+      const saved = localStorage.getItem('finance_credit_cards');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [investments, setInvestments] = useState<Investment[]>(() => {
+    try {
+      const saved = localStorage.getItem('finance_investments');
+      return saved ? JSON.parse(saved) : MOCK_INVESTMENTS;
+    } catch {
+      return MOCK_INVESTMENTS;
+    }
+  });
+
+  const [investmentGoals, setInvestmentGoals] = useState<InvestmentGoal[]>(() => {
+    try {
+      const saved = localStorage.getItem('finance_investment_goals');
+      return saved ? JSON.parse(saved) : MOCK_GOALS;
+    } catch {
+      return MOCK_GOALS;
+    }
+  });
+
+  const [isFormOpen, setIsFormOpen] = useState(false);
+
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('finance_theme') || 'light';
+  });
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('finance_theme', theme);
+  }, [theme]);
+
+  // --- Persistence ---
+  useEffect(() => {
+    localStorage.setItem('finance_transactions', JSON.stringify(transactions));
+  }, [transactions]);
+
+  useEffect(() => {
+    localStorage.setItem('finance_categories', JSON.stringify(categories));
+  }, [categories]);
+
+  useEffect(() => {
+    localStorage.setItem('finance_bills', JSON.stringify(bills));
+  }, [bills]);
+
+  useEffect(() => {
+    localStorage.setItem('finance_income_reminders', JSON.stringify(incomeReminders));
+  }, [incomeReminders]);
+
+  useEffect(() => {
+    localStorage.setItem('finance_credit_cards', JSON.stringify(creditCards));
+  }, [creditCards]);
+
+  useEffect(() => {
+    localStorage.setItem('finance_investments', JSON.stringify(investments));
+  }, [investments]);
+
+  useEffect(() => {
+    localStorage.setItem('finance_investment_goals', JSON.stringify(investmentGoals));
+  }, [investmentGoals]);
+
+  // --- Handlers ---
+  const handleNavigate = (view: string) => {
+      setActiveView(view);
+      setIsMobileSidebarOpen(false); // Close sidebar on mobile nav
+  };
+
+  const handleAddTransactions = (newTransactionsData: Omit<Transaction, 'id'>[]) => {
+    const newTransactions = newTransactionsData.map(t => ({
+        ...t,
+        id: crypto.randomUUID()
+    }));
+    setTransactions(prev => [...newTransactions, ...prev]);
+  };
+
+  const handleDeleteTransaction = (id: string) => {
+    setTransactions(prev => prev.filter(t => t.id !== id));
+  };
+
+  const handleAddCategory = (category: CategoryOption) => {
+    setCategories(prev => [...prev, category]);
+  };
+
+  const handleDeleteCategory = (id: string) => {
+    setCategories(prev => prev.filter(c => c.id !== id));
+  };
+
+  const handleAddBill = (newBill: Omit<Bill, 'id' | 'isPaid'>) => {
+    const bill: Bill = {
+        ...newBill,
+        id: crypto.randomUUID(),
+        isPaid: false
+    };
+    setBills(prev => [...prev, bill]);
+  };
+
+  const handleDeleteBill = (id: string) => {
+    setBills(prev => prev.filter(b => b.id !== id));
+  };
+
+  const handlePayBill = (id: string) => {
+    const bill = bills.find(b => b.id === id);
+    if (!bill) return;
+
+    setBills(prev => prev.map(b => b.id === id ? { ...b, isPaid: true } : b));
+
+    // Add a single transaction for bill payment
+    handleAddTransactions([{
+        description: `Pgto: ${bill.description}`,
+        amount: bill.amount,
+        type: TransactionType.EXPENSE,
+        category: bill.category || 'outros',
+        date: new Date().toISOString().split('T')[0],
+        paymentMethodId: bill.paymentMethodId || 'cash'
+    }]);
+
+    if (bill.recurrence !== 'none') {
+        const currentDueDate = new Date(bill.dueDate);
+        const nextDueDate = new Date(currentDueDate);
+        
+        if (bill.recurrence === 'monthly') {
+            nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+        } else if (bill.recurrence === 'yearly') {
+            nextDueDate.setFullYear(nextDueDate.getFullYear() + 1);
+        }
+        
+        const newBill: Bill = {
+            ...bill,
+            id: crypto.randomUUID(),
+            isPaid: false,
+            dueDate: nextDueDate.toISOString().split('T')[0]
+        };
+        
+        setBills(prev => [...prev, newBill]);
+    }
+  };
+
+  // Income Reminders Handlers
+  const handleAddIncome = (newIncome: Omit<IncomeReminder, 'id' | 'isReceived'>) => {
+    const income: IncomeReminder = {
+        ...newIncome,
+        id: crypto.randomUUID(),
+        isReceived: false
+    };
+    setIncomeReminders(prev => [...prev, income]);
+  };
+
+  const handleDeleteIncome = (id: string) => {
+    setIncomeReminders(prev => prev.filter(i => i.id !== id));
+  };
+
+  const handleReceiveIncome = (id: string) => {
+    const income = incomeReminders.find(i => i.id === id);
+    if (!income) return;
+
+    setIncomeReminders(prev => prev.map(i => i.id === id ? { ...i, isReceived: true } : i));
+
+    // Add transaction
+    handleAddTransactions([{
+        description: `Receb.: ${income.description}`,
+        amount: income.amount,
+        type: TransactionType.INCOME,
+        category: income.category || 'outras_receitas',
+        date: new Date().toISOString().split('T')[0],
+        paymentMethodId: 'cash'
+    }]);
+
+    if (income.recurrence !== 'none') {
+        const currentDueDate = new Date(income.dueDate);
+        const nextDueDate = new Date(currentDueDate);
+        
+        if (income.recurrence === 'monthly') {
+            nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+        } else if (income.recurrence === 'yearly') {
+            nextDueDate.setFullYear(nextDueDate.getFullYear() + 1);
+        }
+        
+        const newIncome: IncomeReminder = {
+            ...income,
+            id: crypto.randomUUID(),
+            isReceived: false,
+            dueDate: nextDueDate.toISOString().split('T')[0]
+        };
+        
+        setIncomeReminders(prev => [...prev, newIncome]);
+    }
+  };
+
+  const handleAddCreditCard = (newCard: Omit<CreditCard, 'id'>) => {
+    const card: CreditCard = { ...newCard, id: crypto.randomUUID() };
+    setCreditCards(prev => [...prev, card]);
+  };
+
+  const handleUpdateCreditCard = (updatedCard: CreditCard) => {
+    setCreditCards(prev => prev.map(c => c.id === updatedCard.id ? updatedCard : c));
+  };
+
+  const handleDeleteCreditCard = (id: string) => {
+    setCreditCards(prev => prev.filter(c => c.id !== id));
+  };
+
+  // Investment Handlers (Mocked for now as UI only requested display)
+  const handleAddInvestment = (inv: Investment) => setInvestments(prev => [...prev, inv]);
+  const handleDeleteInvestment = (id: string) => setInvestments(prev => prev.filter(i => i.id !== id));
+  const handleAddGoal = (goal: InvestmentGoal) => setInvestmentGoals(prev => [...prev, goal]);
+  const handleDeleteGoal = (id: string) => setInvestmentGoals(prev => prev.filter(g => g.id !== id));
+
+  // --- Settings Handlers ---
+  const handleClearData = () => {
+    setTransactions([]);
+    setCategories(DEFAULT_CATEGORIES);
+    setBills([]);
+    setIncomeReminders([]);
+    setCreditCards([]);
+    setInvestments([]);
+    setInvestmentGoals([]);
+    localStorage.clear();
+    alert('Todos os dados foram apagados com sucesso.');
+  };
+
+  const handleExportData = () => {
+    if (transactions.length === 0) {
+      alert('Não há transações para exportar.');
+      return;
+    }
+    const headers = ['ID', 'Descrição', 'Valor', 'Tipo', 'Categoria', 'Data', 'Método de Pagamento'];
+    const rows = [headers.join(',')];
+    
+    transactions.forEach(t => {
+      const row = [
+        t.id,
+        `"${t.description.replace(/"/g, '""')}"`,
+        t.amount,
+        t.type,
+        t.category,
+        t.date,
+        t.paymentMethodId || ''
+      ];
+      rows.push(row.join(','));
+    });
+
+    const csvString = rows.join('\n');
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `financas_ia_transacoes_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportData = (csvData: string) => {
+    try {
+      const lines = csvData.split('\n');
+      const newTransactions: any[] = [];
+      
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        
+        let inQuotes = false;
+        let currentValue = '';
+        const rowValues = [];
+        
+        for (let char of line) {
+          if (char === '"') {
+            inQuotes = !inQuotes;
+          } else if (char === ',' && !inQuotes) {
+            rowValues.push(currentValue);
+            currentValue = '';
+          } else {
+            currentValue += char;
+          }
+        }
+        rowValues.push(currentValue);
+        
+        if (rowValues.length >= 6) {
+          newTransactions.push({
+            id: rowValues[0] || crypto.randomUUID(),
+            description: rowValues[1].replace(/""/g, '"'),
+            amount: Number(rowValues[2]),
+            type: rowValues[3],
+            category: rowValues[4],
+            date: rowValues[5],
+            paymentMethodId: rowValues[6] || undefined
+          });
+        }
+      }
+
+      if (newTransactions.length > 0) {
+        setTransactions(prev => [...prev, ...newTransactions]);
+      }
+    } catch (error) {
+      console.error('Error parsing CSV:', error);
+      throw new Error('Invalid CSV format');
+    }
+  };
+
+  // --- Date Helpers ---
+  const changeMonth = (offset: number) => {
+      const newDate = new Date(currentDate);
+      newDate.setMonth(newDate.getMonth() + offset);
+      setCurrentDate(newDate);
+  };
+
+  const formatCurrentMonth = () => {
+      const month = currentDate.toLocaleDateString('pt-BR', { month: 'long' });
+      const year = currentDate.getFullYear();
+      // Capitalize month
+      return `${month.charAt(0).toUpperCase() + month.slice(1)} - ${year}`;
+  };
+  
+  const formatCurrency = (value: number) => {
+    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  };
+
+  // --- Derived Data (Rollover Logic) ---
+  
+  const financialData = useMemo(() => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+
+    // Start of the currently selected month
+    const startOfSelectedMonth = new Date(year, month, 1);
+    const startOfNextMonth = new Date(year, month + 1, 1);
+
+    // 1. Calculate Previous Balance (Rollover)
+    // Sum of all incomes - expenses BEFORE the 1st of this month
+    const previousTransactions = transactions.filter(t => {
+        const tDate = new Date(t.date);
+        // Reset hours to avoid timezone issues affecting day comparison
+        const tDateNormalized = new Date(tDate.getFullYear(), tDate.getMonth(), tDate.getDate());
+        return tDateNormalized < startOfSelectedMonth;
+    });
+
+    const previousIncome = previousTransactions
+        .filter(t => t.type === TransactionType.INCOME)
+        .reduce((sum, t) => sum + t.amount, 0);
+
+    const previousExpense = previousTransactions
+        .filter(t => t.type === TransactionType.EXPENSE)
+        .reduce((sum, t) => sum + t.amount, 0);
+
+    const previousBalance = previousIncome - previousExpense;
+
+    // 2. Current Month Transactions
+    const currentTransactions = transactions.filter(t => {
+        const tDate = new Date(t.date);
+        const tDateNormalized = new Date(tDate.getFullYear(), tDate.getMonth(), tDate.getDate());
+        return tDateNormalized >= startOfSelectedMonth && tDateNormalized < startOfNextMonth;
+    });
+
+    const currentIncome = currentTransactions
+        .filter(t => t.type === TransactionType.INCOME)
+        .reduce((sum, t) => sum + t.amount, 0);
+
+    const currentExpense = currentTransactions
+        .filter(t => t.type === TransactionType.EXPENSE)
+        .reduce((sum, t) => sum + t.amount, 0);
+    
+    const currentBalance = currentIncome - currentExpense;
+
+    // 3. Total Accumulated Balance (Available Now)
+    const totalAccumulatedBalance = previousBalance + currentBalance;
+
+    return {
+        previousBalance,
+        currentIncome,
+        currentExpense,
+        currentBalance,
+        totalAccumulatedBalance,
+        monthlyTransactions: currentTransactions
+    };
+
+  }, [transactions, currentDate]);
+
+  const activeNotifications = useMemo(() => {
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    
+    return bills.filter(bill => {
+        if (bill.isPaid) return false;
+        const dueDate = new Date(bill.dueDate);
+        dueDate.setHours(0,0,0,0);
+        
+        const diffTime = dueDate.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        return diffDays <= bill.notifyDaysBefore;
+    }).map(bill => {
+        const dueDate = new Date(bill.dueDate);
+        const diffTime = dueDate.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        return { ...bill, diffDays };
+    });
+  }, [bills]);
+
+  // --- Reusable Components ---
+  const MonthSelector = () => (
+    <div className="flex items-center justify-center mb-6 md:mb-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-1 flex items-center gap-2">
+            <button onClick={() => changeMonth(-1)} className="p-2 hover:bg-slate-100 rounded-xl text-slate-500 transition-colors">
+                <ChevronLeft size={20} />
+            </button>
+            <span className="w-40 md:w-48 text-center font-bold text-slate-800 select-none text-sm md:text-base">
+                {formatCurrentMonth()}
+            </span>
+            <button onClick={() => changeMonth(1)} className="p-2 hover:bg-slate-100 rounded-xl text-slate-500 transition-colors">
+                <ChevronRight size={20} />
+            </button>
+        </div>
+    </div>
+  );
+
+  // --- Render Views ---
+  const renderContent = () => {
+    switch(activeView) {
+        case 'dashboard':
+            return (
+                <div className="space-y-6 md:space-y-8 animate-fade-in">
+                    {/* Global Notifications for Bills */}
+                    {activeNotifications.length > 0 && (
+                        <div className="mb-6 md:mb-8 bg-orange-50 border border-orange-200 rounded-2xl p-4 md:p-5 animate-fade-in-down shadow-sm">
+                            <div className="flex items-center gap-2 text-orange-800 font-bold mb-3">
+                                <Bell size={20} />
+                                <span>Atenção: contas próximas</span>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {activeNotifications.map(note => (
+                                    <div key={note.id} className="flex items-center justify-between text-sm bg-white p-3 rounded-xl border border-orange-100 shadow-sm">
+                                        <div>
+                                            <span className="text-slate-700 font-bold block">
+                                                {note.description}
+                                            </span>
+                                            {note.customAlertMessage && (note.diffDays <= 1) && (
+                                                <span className="text-xs text-orange-600 block mt-0.5 font-medium">"{note.customAlertMessage}"</span>
+                                            )}
+                                        </div>
+                                        <div className="text-right">
+                                             <span className="block text-slate-500 text-xs mb-0.5">{formatCurrency(note.amount)}</span>
+                                             <span className={`font-bold text-xs ${note.diffDays < 0 ? 'text-red-600' : 'text-orange-600'}`}>
+                                                {note.diffDays < 0 
+                                                    ? `Venceu há ${Math.abs(note.diffDays)} dias` 
+                                                    : note.diffDays === 0 ? 'Vence hoje!' : `Em ${note.diffDays} dias`}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    <MonthSelector />
+
+                    {/* Summary Cards - Updated with Rollover Logic */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                        
+                        {/* Accumulated Balance (Main) */}
+                        <div className="no-invert bg-slate-900 p-5 md:p-6 rounded-3xl shadow-xl shadow-slate-200 dark:shadow-none text-white relative overflow-hidden group lg:col-span-2">
+                            <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <PiggyBank size={80} />
+                            </div>
+                            <div className="relative z-10">
+                                <div className="flex items-center gap-2 mb-2 md:mb-3">
+                                    <p className="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider">Saldo Disponível Acumulado</p>
+                                    <span className="bg-slate-800 text-[10px] px-2 py-0.5 rounded text-slate-300">Total</span>
+                                </div>
+                                <h2 className="text-3xl md:text-4xl font-bold mb-3 md:mb-4 tracking-tight">
+                                    {formatCurrency(financialData.totalAccumulatedBalance)}
+                                </h2>
+                                <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
+                                    <History size={14} />
+                                    <span>Anterior: {formatCurrency(financialData.previousBalance)}</span>
+                                    <span>+</span>
+                                    <span>Mês Atual: {formatCurrency(financialData.currentBalance)}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Current Month Income */}
+                        <div className="bg-white p-5 md:p-6 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group">
+                            <div className="absolute top-4 right-4 p-2 bg-green-50 text-green-600 rounded-xl">
+                                <TrendingUp size={24} />
+                            </div>
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 md:mb-3">Receitas</p>
+                            <h2 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">
+                                {formatCurrency(financialData.currentIncome)}
+                            </h2>
+                            <p className="text-xs text-slate-500 mt-2 font-medium">Entradas este mês</p>
+                        </div>
+
+                        {/* Current Month Expense */}
+                        <div className="bg-white p-5 md:p-6 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group">
+                            <div className="absolute top-4 right-4 p-2 bg-red-50 text-red-600 rounded-xl">
+                                <TrendingDown size={24} />
+                            </div>
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 md:mb-3">Despesas</p>
+                            <h2 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">
+                                {formatCurrency(financialData.currentExpense)}
+                            </h2>
+                             <p className="text-xs text-slate-500 mt-2 font-medium">Saídas este mês</p>
+                        </div>
+                    </div>
+
+                    <FinancialCharts 
+                        transactions={financialData.monthlyTransactions} 
+                        categories={categories} 
+                        monthlyIncome={financialData.currentIncome}
+                    />
+
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-6 border-t border-slate-200">
+                        <h2 className="text-lg md:text-xl font-bold text-slate-800">Transações recentes</h2>
+                        <button
+                            onClick={() => { setActiveView('transactions'); setIsFormOpen(true); }}
+                            className="no-invert hidden md:flex bg-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-bold items-center gap-2 hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/10"
+                        >
+                            <Plus size={18} /> Nova transação
+                        </button>
+                    </div>
+                    <TransactionList 
+                        transactions={financialData.monthlyTransactions.slice(0, 5)} 
+                        onDelete={handleDeleteTransaction}
+                        categories={categories}
+                        creditCards={creditCards}
+                    />
+                </div>
+            );
+        case 'investments':
+            return (
+                <div className="space-y-6 animate-fade-in">
+                    <InvestmentsDashboard 
+                        investments={investments}
+                        goals={investmentGoals}
+                        transactions={transactions} // To calc avg expense
+                        onAddInvestment={handleAddInvestment}
+                        onDeleteInvestment={handleDeleteInvestment}
+                        onAddGoal={handleAddGoal}
+                        onDeleteGoal={handleDeleteGoal}
+                    />
+                </div>
+            );
+        case 'transactions':
+            return (
+                <div className="space-y-6 animate-fade-in">
+                    <MonthSelector />
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                        <h2 className="text-lg md:text-xl font-bold text-slate-800">Transações de {formatCurrentMonth()}</h2>
+                        <button
+                            onClick={() => setIsFormOpen(true)}
+                            className="w-full sm:w-auto bg-primary-600 text-white px-5 py-2.5 rounded-xl font-bold shadow-md hover:bg-primary-700 transition-colors flex items-center justify-center gap-2 text-sm"
+                        >
+                            <Plus size={18} /> Adicionar
+                        </button>
+                    </div>
+                    <TransactionList 
+                        transactions={financialData.monthlyTransactions} 
+                        onDelete={handleDeleteTransaction}
+                        categories={categories}
+                        creditCards={creditCards}
+                    />
+                </div>
+            );
+        case 'bills':
+            return (
+                <div className="space-y-6 animate-fade-in">
+                    <div className="flex justify-between items-center mb-2">
+                        <h2 className="text-xl md:text-2xl font-bold text-slate-800">Contas a pagar</h2>
+                    </div>
+                    <BillReminders 
+                        bills={bills} 
+                        onAddBill={handleAddBill} 
+                        onDeleteBill={handleDeleteBill}
+                        onPayBill={handlePayBill}
+                        creditCards={creditCards}
+                        categories={categories}
+                    />
+                </div>
+            );
+        case 'income-reminders':
+            return (
+                <div className="space-y-6 animate-fade-in">
+                    <div className="flex justify-between items-center mb-2">
+                        <h2 className="text-xl md:text-2xl font-bold text-slate-800">Contas a receber</h2>
+                    </div>
+                    <IncomeReminders 
+                        incomes={incomeReminders}
+                        onAddIncome={handleAddIncome}
+                        onReceiveIncome={handleReceiveIncome}
+                        onDeleteIncome={handleDeleteIncome}
+                        categories={categories}
+                    />
+                </div>
+            );
+        case 'credit-cards':
+            return (
+                <div className="space-y-6 animate-fade-in">
+                    <h2 className="text-xl md:text-2xl font-bold text-slate-800">Gerenciar cartões</h2>
+                    <CreditCardManager 
+                        cards={creditCards}
+                        // Passing full transactions array here
+                        transactions={transactions}
+                        onAddCard={handleAddCreditCard}
+                        onUpdateCard={handleUpdateCreditCard}
+                        onDeleteCard={handleDeleteCreditCard}
+                    />
+                </div>
+            );
+        case 'categories':
+            return (
+                <div className="animate-fade-in">
+                    <CategoryManager 
+                        categories={categories}
+                        onAddCategory={handleAddCategory}
+                        onDeleteCategory={handleDeleteCategory}
+                    />
+                </div>
+            );
+        case 'ai-advisor':
+            return (
+                <div className="space-y-6 animate-fade-in">
+                    <h2 className="text-xl md:text-2xl font-bold text-slate-800">Consultoria inteligente</h2>
+                    <AIAdvisor transactions={financialData.monthlyTransactions} />
+                    <div className="bg-indigo-50 p-6 rounded-2xl border border-indigo-100">
+                        <h3 className="text-indigo-900 font-bold mb-2">Sobre o Consultor IA</h3>
+                        <p className="text-indigo-700/80 text-sm leading-relaxed">
+                            Utilizamos a tecnologia Google Gemini para analisar seus padrões de gastos. 
+                            A análise atual considera apenas as transações de <strong>{formatCurrentMonth()}</strong>.
+                        </p>
+                    </div>
+                </div>
+            );
+        case 'settings':
+            return (
+                <div className="space-y-6 animate-fade-in">
+                    <h2 className="text-xl md:text-2xl font-bold text-slate-800">Configurações</h2>
+                    <Settings 
+                        onClearData={handleClearData}
+                        onExportData={handleExportData}
+                        onImportData={handleImportData}
+                        theme={theme}
+                        onThemeChange={setTheme}
+                    />
+                </div>
+            );
+        default:
+            return null;
+    }
+  };
+
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900 dark:border-white"></div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <AuthScreen />;
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex font-sans overflow-x-hidden">
+      {/* Mobile Sidebar Overlay */}
+      {isMobileSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 z-40 md:hidden backdrop-blur-sm transition-opacity"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <Sidebar 
+        activeView={activeView} 
+        onNavigate={handleNavigate} 
+        isExpanded={isSidebarExpanded}
+        toggleSidebar={() => setIsSidebarExpanded(!isSidebarExpanded)}
+        isMobileOpen={isMobileSidebarOpen}
+        closeMobileSidebar={() => setIsMobileSidebarOpen(false)}
+      />
+
+      {/* Main Content Wrapper */}
+      <div 
+        className={`flex-1 flex flex-col min-h-screen transition-all duration-300 w-full ${
+            isSidebarExpanded ? 'md:ml-64' : 'md:ml-20'
+        }`}
+      >
+        {/* Top Header */}
+        <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-200/60 flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
+            <div className="flex items-center gap-3">
+                <button 
+                    onClick={() => setIsMobileSidebarOpen(true)}
+                    className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+                >
+                    <Menu size={24} />
+                </button>
+                <h1 className="font-bold text-slate-800 text-lg capitalize truncate max-w-[200px] md:max-w-none">
+                    {activeView === 'credit-cards' ? 'Cartões' : 
+                    activeView === 'ai-advisor' ? 'Consultor IA' : 
+                    activeView === 'categories' ? 'Categorias' :
+                    activeView === 'bills' ? 'Contas a pagar' :
+                    activeView === 'income-reminders' ? 'Contas a receber' :
+                    activeView === 'transactions' ? 'Transações' :
+                    activeView === 'investments' ? 'Investimentos' :
+                    activeView === 'settings' ? 'Configurações' :
+                    'Dashboard'}
+                </h1>
+                <span className="hidden md:inline-block text-sm text-slate-500 font-medium ml-2 border-l border-slate-200 pl-3">
+                    {now.toLocaleDateString('pt-BR')} às {now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                </span>
+            </div>
+            
+            <div className="flex items-center gap-4">
+                 {/* User profile or simple greeting could go here */}
+            </div>
+        </header>
+
+        {/* Dynamic Content */}
+        <main className="p-4 md:p-8 pb-24 max-w-7xl mx-auto w-full">
+            {renderContent()}
+        </main>
+      </div>
+
+      {/* Mobile Sticky FAB */}
+      {(activeView === 'dashboard' || activeView === 'transactions') && (
+        <button
+            onClick={() => setIsFormOpen(true)}
+            className="no-invert md:hidden fixed bottom-6 right-6 bg-slate-900 text-white w-14 h-14 rounded-full shadow-2xl shadow-slate-900/40 flex items-center justify-center z-50 transition-transform active:scale-95"
+        >
+            <Plus size={28} />
+        </button>
+      )}
+
+      {/* Form Modal */}
+      {isFormOpen && (
+        <TransactionForm
+          onAdd={handleAddTransactions}
+          onClose={() => setIsFormOpen(false)}
+          categories={categories}
+          creditCards={creditCards}
+        />
+      )}
+    </div>
+  );
+};
+
+export default App;

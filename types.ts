@@ -1,0 +1,91 @@
+export enum TransactionType {
+  INCOME = 'income',
+  EXPENSE = 'expense'
+}
+
+export interface Transaction {
+  id: string;
+  description: string;
+  amount: number;
+  type: TransactionType;
+  category: string;
+  paymentMethodId?: string; // 'cash' or CreditCard.id
+  date: string;
+  installments?: {
+    current: number;
+    total: number;
+    id: string; // Group ID to link installments
+  };
+}
+
+export type RecurrenceType = 'none' | 'monthly' | 'yearly';
+
+export interface Bill {
+  id: string;
+  description: string;
+  amount: number;
+  dueDate: string;
+  notifyDaysBefore: number;
+  isPaid: boolean;
+  recurrence: RecurrenceType;
+  customAlertMessage?: string;
+  paymentMethodId?: string; // 'cash' or CreditCard.id
+  category?: string;
+}
+
+// New interface for Income Reminders
+export interface IncomeReminder {
+  id: string;
+  description: string;
+  amount: number;
+  dueDate: string; // Expected receipt date
+  isReceived: boolean;
+  recurrence: RecurrenceType;
+  category?: string;
+}
+
+export interface FinancialSummary {
+  totalIncome: number;
+  totalExpense: number;
+  balance: number;
+}
+
+export type BudgetGroup = 'needs' | 'wants' | 'savings' | 'none';
+
+export interface CategoryOption {
+  id: string;
+  label: string;
+  color: string;
+  isCustom?: boolean;
+  budgetGroup?: BudgetGroup; 
+}
+
+export interface CreditCard {
+  id: string;
+  name: string;
+  limit: number;
+  closingDay: number;
+  dueDay: number;
+  color: string;
+}
+
+// --- Investment Types ---
+
+export type InvestmentType = 'fixed' | 'stock' | 'fii' | 'crypto' | 'foreign' | 'fund';
+
+export interface Investment {
+  id: string;
+  name: string; // e.g., "Tesouro Selic 2029", "AAPL"
+  amount: number; // Current Value
+  type: InvestmentType;
+  isLiquidity: boolean; // For Emergency Fund calculation
+}
+
+export interface InvestmentGoal {
+  id: string;
+  name: string; // "Viagem Disney"
+  targetAmount: number;
+  currentAmount: number;
+  deadline: string; // ISO Date
+  icon?: string; // e.g., 'plane', 'home'
+}
