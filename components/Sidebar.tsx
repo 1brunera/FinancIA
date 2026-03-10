@@ -54,20 +54,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <div 
-      className={`no-invert bg-black h-screen fixed left-0 top-0 text-white transition-all duration-300 z-50 flex flex-col 
+      className={`h-screen fixed left-0 top-0 transition-all duration-300 z-50 flex flex-col bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 text-slate-800 dark:text-white
       ${isMobileOpen ? 'translate-x-0 w-64' : '-translate-x-full md:translate-x-0'} 
       ${isExpanded ? 'md:w-64' : 'md:w-20'}`}
     >
       {/* Header */}
-      <div className="h-16 flex items-center justify-between md:justify-center border-b border-gray-900 px-4">
+      <div className="h-16 flex items-center justify-between md:justify-center border-b border-slate-200 dark:border-slate-800 px-4">
         <div className="flex items-center gap-2 overflow-hidden">
           {(isExpanded || isMobileOpen) ? (
             <span className="font-bold text-2xl tracking-tight whitespace-nowrap opacity-100 transition-opacity duration-300">
-              <span className="text-white">Finance</span><span className="text-blue-500">IA</span>
+              <span className="text-slate-900 dark:text-white">Finance</span><span className="text-blue-500">IA</span>
             </span>
           ) : (
             <span className="font-bold text-2xl tracking-tight whitespace-nowrap">
-              <span className="text-white">F</span><span className="text-blue-500">IA</span>
+              <span className="text-slate-900 dark:text-white">F</span><span className="text-blue-500">IA</span>
             </span>
           )}
         </div>
@@ -75,7 +75,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Mobile Close Button */}
         <button 
             onClick={closeMobileSidebar}
-            className="md:hidden text-gray-400 hover:text-white"
+            className="md:hidden text-slate-400 hover:text-slate-600 dark:hover:text-white"
         >
             <X size={24} />
         </button>
@@ -89,7 +89,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${
             activeView === 'dashboard' 
               ? 'bg-primary-600 text-white shadow-lg shadow-primary-900/20' 
-              : 'text-gray-400 hover:bg-gray-900 hover:text-white'
+              : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-white'
           }`}
           title={(!isExpanded && !isMobileOpen) ? 'Dashboard' : ''}
         >
@@ -105,7 +105,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${
             activeView === 'investments' 
               ? 'bg-primary-600 text-white shadow-lg shadow-primary-900/20' 
-              : 'text-gray-400 hover:bg-gray-900 hover:text-white'
+              : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-white'
           }`}
           title={(!isExpanded && !isMobileOpen) ? 'Investimentos' : ''}
         >
@@ -116,7 +116,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </button>
 
         {/* Separator */}
-        <div className="h-px bg-gray-900 my-2"></div>
+        <div className="h-px bg-slate-200 dark:bg-slate-800 my-2"></div>
 
         {/* Gestão Group (Collapsible) */}
         <div className="space-y-1">
@@ -130,7 +130,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     }
                 }}
                 className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${
-                    isManagementActive ? 'text-white bg-gray-900' : 'text-gray-400 hover:bg-gray-900 hover:text-white'
+                    isManagementActive ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-900' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-white'
                 }`}
                 title={(!isExpanded && !isMobileOpen) ? 'Gestão' : ''}
             >
@@ -147,7 +147,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             {/* Submenu */}
             {((isExpanded || isMobileOpen) && isManagementOpen) && (
-                <div className="ml-4 pl-4 border-l border-gray-800 space-y-1 mt-1 animate-fade-in">
+                <div className="ml-4 pl-4 border-l border-slate-200 dark:border-slate-800 space-y-1 mt-1 animate-fade-in">
                     {managementItems.map(item => {
                         const Icon = item.icon;
                         const isActive = activeView === item.id;
@@ -157,8 +157,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 onClick={() => onNavigate(item.id)}
                                 className={`w-full flex items-center gap-3 p-2 rounded-lg text-sm transition-all ${
                                     isActive 
-                                    ? 'text-primary-400 font-bold bg-gray-900/50' 
-                                    : 'text-gray-500 hover:text-white hover:bg-gray-900/30'
+                                    ? 'text-primary-600 dark:text-primary-400 font-bold bg-slate-100 dark:bg-slate-900/50' 
+                                    : 'text-slate-500 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900/30'
                                 }`}
                             >
                                 <Icon size={18} />
@@ -191,8 +191,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onClick={() => onNavigate('settings')}
           className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${
             activeView === 'settings' 
-              ? 'bg-gray-800 text-white shadow-lg shadow-gray-900/20' 
-              : 'text-gray-400 hover:bg-gray-900 hover:text-white'
+              ? 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' 
+              : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-white'
           }`}
           title={(!isExpanded && !isMobileOpen) ? 'Configurações' : ''}
         >
@@ -205,10 +205,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </nav>
 
       {/* Footer / Toggle */}
-      <div className="p-4 border-t border-gray-900 space-y-2">
+      <div className="p-4 border-t border-slate-200 dark:border-slate-800 space-y-2">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 p-3 rounded-xl transition-all text-red-400 hover:bg-red-900/20 hover:text-red-300"
+          className="w-full flex items-center gap-3 p-3 rounded-xl transition-all text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-300"
           title={(!isExpanded && !isMobileOpen) ? 'Sair' : ''}
         >
           <LogOut size={22} className="shrink-0" />
@@ -219,7 +219,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         <button
           onClick={toggleSidebar}
-          className="hidden md:flex w-full items-center justify-center p-2 rounded-lg bg-gray-900 hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
+          className="hidden md:flex w-full items-center justify-center p-2 rounded-lg bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
         >
           {isExpanded ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
         </button>

@@ -6,7 +6,7 @@ import { PiggyBank } from 'lucide-react';
 
 export const AuthScreen: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-black to-blue-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
+    <div className="min-h-screen bg-[#050505] bg-gradient-to-br from-[#000000] via-[#050505] to-[#0a192f] flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
       <div className="sm:mx-auto sm:w-full sm:max-w-md flex flex-col items-center">
         <h2 className="mt-2 text-center text-4xl font-extrabold tracking-tight">
           <span className="text-white">Finance</span><span className="text-blue-500">IA</span>
@@ -17,7 +17,7 @@ export const AuthScreen: React.FC = () => {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-slate-900/80 backdrop-blur-xl py-8 px-4 shadow-2xl shadow-blue-900/20 sm:rounded-3xl sm:px-10 border border-slate-800">
+        <div className="bg-white/5 backdrop-blur-md py-8 px-4 shadow-2xl sm:rounded-3xl sm:px-10 border border-white/10">
           <Auth
             supabaseClient={supabase}
             appearance={{
@@ -25,24 +25,29 @@ export const AuthScreen: React.FC = () => {
               variables: {
                 default: {
                   colors: {
-                    brand: '#3b82f6', // blue-500
-                    brandAccent: '#2563eb', // blue-600
-                    defaultButtonBackground: '#1e293b',
-                    defaultButtonBackgroundHover: '#334155',
-                    inputBackground: '#0f172a',
-                    inputBorder: '#334155',
-                    inputText: '#f8fafc',
-                    inputPlaceholder: '#64748b',
+                    brand: '#ffffff', // white
+                    brandAccent: '#e2e8f0', // slate-200
+                    defaultButtonBackground: 'transparent',
+                    defaultButtonBackgroundHover: 'rgba(255,255,255,0.1)',
+                    defaultButtonBorder: 'rgba(255,255,255,0.2)',
+                    defaultButtonText: '#ffffff',
+                    inputBackground: 'transparent',
+                    inputBorder: 'rgba(255,255,255,0.2)',
+                    inputBorderHover: 'rgba(255,255,255,0.4)',
+                    inputBorderFocus: '#ffffff',
+                    inputText: '#ffffff',
+                    inputPlaceholder: 'rgba(255,255,255,0.5)',
                   },
                 },
               },
               className: {
-                container: 'w-full',
-                button: 'rounded-xl font-medium text-white',
+                container: 'w-full font-sans',
+                button: 'rounded-xl font-medium text-slate-900',
                 input: 'rounded-xl text-white',
-                label: 'text-slate-300',
-                anchor: 'text-blue-400 hover:text-blue-300',
-                message: 'text-slate-300',
+                label: 'text-white/90 font-medium',
+                anchor: 'text-white/70 hover:text-white',
+                message: 'text-white/90',
+                divider: 'bg-white/20',
               }
             }}
             providers={['google']}
