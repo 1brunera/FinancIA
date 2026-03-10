@@ -1,5 +1,5 @@
 <div align="center">
-<img width="1200" height="475" alt="GHBanner" src="" />
+<img width="1200" height="475" alt="GHBanner" <a href="https://ibb.co/Zzmytfzs"><img src="https://i.ibb.co/8gcFTmg3/google-ai-studio.jpg" alt="google-ai-studio" border="0" /></a>" />
 </div>
 
 # FinancIA
