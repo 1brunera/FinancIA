@@ -78,9 +78,9 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
                             onChange={(e) => setBudgetGroup(e.target.value as BudgetGroup)}
                             className="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none text-sm bg-white dark:bg-slate-900"
                         >
-                            <option value="needs">Essencial (Necessidades)</option>
-                            <option value="wants">Estilo de Vida (Desejos)</option>
-                            <option value="savings">Objetivos (Dívidas/Investimentos)</option>
+                            <option value="needs">Essenciais</option>
+                            <option value="wants">Lazer</option>
+                            <option value="savings">Investimentos</option>
                         </select>
                         <p className="text-[10px] text-slate-400 mt-1">Define onde esta categoria se encaixa no modelo 50/30/20.</p>
                     </div>
@@ -124,9 +124,9 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
                                     <span className="text-slate-700 dark:text-slate-200 font-semibold text-sm">{cat.label}</span>
                                 </div>
                                 <span className="text-[10px] text-slate-400 ml-12 uppercase tracking-wide">
-                                    {cat.budgetGroup === 'needs' ? 'Essencial' : 
-                                     cat.budgetGroup === 'wants' ? 'Estilo de Vida' : 
-                                     cat.budgetGroup === 'savings' ? 'Objetivos' : 'Geral'}
+                                    {cat.budgetGroup === 'needs' ? 'Essenciais' : 
+                                     cat.budgetGroup === 'wants' ? 'Lazer' : 
+                                     cat.budgetGroup === 'savings' ? 'Investimentos' : 'Geral'}
                                 </span>
                             </div>
                             {cat.isCustom ? (

@@ -578,8 +578,9 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
                             <div className="flex items-center gap-2 pl-4 border-l border-slate-100 dark:border-slate-800">
                                 <button
                                     onClick={() => onDeleteBill(bill.id)}
-                                    className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                    title="Excluir"
+                                    className={`p-2 rounded-lg transition-colors ${bill.id.startsWith('cc-invoice-') ? 'text-slate-200 cursor-not-allowed' : 'text-slate-300 hover:text-red-500 hover:bg-red-50'}`}
+                                    title={bill.id.startsWith('cc-invoice-') ? "Faturas de cartão não podem ser excluídas manualmente" : "Excluir"}
+                                    disabled={bill.id.startsWith('cc-invoice-')}
                                 >
                                     <Trash2 size={20} />
                                 </button>

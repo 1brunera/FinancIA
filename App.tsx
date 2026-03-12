@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Bell, Calendar, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Wallet, Menu, History, PiggyBank, Sun, Moon } from 'lucide-react';
+import { Plus, Bell, Calendar, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Wallet, Menu, History, PiggyBank, Sun, Moon, CreditCard as CreditCardIcon } from 'lucide-react';
 import { Transaction, TransactionType, CategoryOption, Bill, CreditCard, IncomeReminder, Investment, InvestmentGoal } from './types';
 import { MOCK_TRANSACTIONS, DEFAULT_CATEGORIES, MOCK_INVESTMENTS, MOCK_GOALS } from './constants';
 import { TransactionForm } from './components/TransactionForm';
@@ -145,6 +145,77 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('finance_bills', JSON.stringify(bills));
   }, [bills]);
+
+  // Sync credit card bills based on transactions
+  useEffect(() => {
+    setBills(prevBills => {
+      const nonCcBills = prevBills.filter(b => !b.id.startsWith('cc-invoice-'));
+      const ccBillsMap = new Map<string, Bill>();
+
+      // Retain existing cc bills to keep their isPaid status
+      prevBills.filter(b => b.id.startsWith('cc-invoice-')).forEach(b => {
+        ccBillsMap.set(b.id, { ...b, amount: 0 }); // Reset amount to recalculate
+      });
+
+      transactions.forEach(t => {
+        if (t.type === TransactionType.EXPENSE && t.paymentMethodId && t.paymentMethodId !== 'cash') {
+          const card = creditCards.find(c => c.id === t.paymentMethodId);
+          if (card) {
+            const tDate = new Date(t.date + 'T12:00:00');
+            let month = tDate.getMonth();
+            let year = tDate.getFullYear();
+            
+            if (tDate.getDate() > card.closingDay) {
+                month += 1;
+                if (month > 11) {
+                    month = 0;
+                    year += 1;
+                }
+            }
+            
+            let dueMonth = month;
+            let dueYear = year;
+            if (card.dueDay <= card.closingDay) {
+                dueMonth += 1;
+                if (dueMonth > 11) {
+                    dueMonth = 0;
+                    dueYear += 1;
+                }
+            }
+            
+            const dueDate = new Date(dueYear, dueMonth, card.dueDay);
+            const invoiceId = `cc-invoice-${card.id}-${year}-${month}`;
+            
+            if (ccBillsMap.has(invoiceId)) {
+                ccBillsMap.get(invoiceId)!.amount += t.amount;
+            } else {
+                ccBillsMap.set(invoiceId, {
+                    id: invoiceId,
+                    description: `Fatura ${card.name}`,
+                    amount: t.amount,
+                    dueDate: dueDate.toISOString().split('T')[0],
+                    notifyDaysBefore: 3,
+                    isPaid: false,
+                    recurrence: 'none',
+                    category: 'outros',
+                    paymentMethodId: 'cash' // The invoice itself is paid with cash/account balance
+                });
+            }
+          }
+        }
+      });
+
+      // Filter out cc bills that have 0 amount (no transactions anymore)
+      const activeCcBills = Array.from(ccBillsMap.values()).filter(b => b.amount > 0);
+
+      // Check if there are any changes to avoid infinite loops
+      const newBills = [...nonCcBills, ...activeCcBills];
+      if (JSON.stringify(newBills) !== JSON.stringify(prevBills)) {
+          return newBills;
+      }
+      return prevBills;
+    });
+  }, [transactions, creditCards]);
 
   useEffect(() => {
     localStorage.setItem('finance_income_reminders', JSON.stringify(incomeReminders));
@@ -461,7 +532,7 @@ const App: React.FC = () => {
         .reduce((sum, t) => sum + t.amount, 0);
 
     const previousExpense = previousTransactions
-        .filter(t => t.type === TransactionType.EXPENSE)
+        .filter(t => t.type === TransactionType.EXPENSE && (!t.paymentMethodId || t.paymentMethodId === 'cash'))
         .reduce((sum, t) => sum + t.amount, 0);
 
     const previousBalance = previousIncome - previousExpense;
@@ -478,7 +549,7 @@ const App: React.FC = () => {
         .reduce((sum, t) => sum + t.amount, 0);
 
     const currentExpense = currentTransactions
-        .filter(t => t.type === TransactionType.EXPENSE)
+        .filter(t => t.type === TransactionType.EXPENSE && (!t.paymentMethodId || t.paymentMethodId === 'cash'))
         .reduce((sum, t) => sum + t.amount, 0);
     
     const currentBalance = currentIncome - currentExpense;
@@ -626,10 +697,49 @@ const App: React.FC = () => {
                         </div>
                     </div>
 
+                    {/* Credit Card Invoices */}
+                    {creditCards.length > 0 && (
+                        <div className="mt-8">
+                            <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Faturas de Cartão ({formatCurrentMonth()})</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {creditCards.map(card => {
+                                    const invoice = bills.find(b => 
+                                        b.id.startsWith(`cc-invoice-${card.id}-`) && 
+                                        new Date(b.dueDate + 'T12:00:00').getMonth() === currentDate.getMonth() &&
+                                        new Date(b.dueDate + 'T12:00:00').getFullYear() === currentDate.getFullYear()
+                                    );
+                                    
+                                    const amount = invoice ? invoice.amount : 0;
+                                    
+                                    return (
+                                        <div key={card.id} className="bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden group">
+                                            <div className="absolute top-0 right-0 w-16 h-16 opacity-10 rounded-bl-full" style={{ backgroundColor: card.color }}></div>
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <div className="w-8 h-8 rounded-full flex items-center justify-center text-white shadow-sm" style={{ backgroundColor: card.color }}>
+                                                    <CreditCardIcon size={16} />
+                                                </div>
+                                                <h4 className="font-bold text-slate-800 dark:text-white">{card.name}</h4>
+                                            </div>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Fatura Atual</p>
+                                            <h3 className="text-2xl font-bold text-slate-800 dark:text-white tracking-tight">
+                                                {formatCurrency(amount)}
+                                            </h3>
+                                            <div className="mt-3 flex items-center justify-between text-xs font-medium text-slate-500 dark:text-slate-400">
+                                                <span>Vence dia {card.dueDay}</span>
+                                                <span>Limite: {formatCurrency(card.limit)}</span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
                     <FinancialCharts 
                         transactions={financialData.monthlyTransactions} 
                         categories={categories} 
                         monthlyIncome={financialData.currentIncome}
+                        creditCards={creditCards}
                     />
 
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-6 border-t border-slate-200 dark:border-slate-700">

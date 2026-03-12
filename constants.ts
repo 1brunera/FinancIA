@@ -9,9 +9,11 @@ export const EXPENSE_CATEGORIES: CategoryOption[] = [
   
   { id: 'lazer', label: 'Lazer', color: '#8b5cf6', budgetGroup: 'wants' }, // Desejo/Estilo de vida
   { id: 'compras', label: 'Compras', color: '#ec4899', budgetGroup: 'wants' }, // Desejo
+  { id: 'assinaturas', label: 'Assinaturas', color: '#f43f5e', budgetGroup: 'wants' }, // Desejo
   
   { id: 'investimentos', label: 'Investimentos', color: '#6366f1', budgetGroup: 'savings' }, // Objetivos
   { id: 'dividas', label: 'Pagamento de Dívidas', color: '#475569', budgetGroup: 'savings' }, // Objetivos
+  { id: 'impostos', label: 'Impostos', color: '#78716c', budgetGroup: 'needs' }, // Essencial
   
   { id: 'outros', label: 'Outros', color: '#64748b', budgetGroup: 'wants' }, // Default para Wants geralmente
 ];

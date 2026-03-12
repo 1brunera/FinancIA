@@ -1,24 +1,20 @@
 <div align="center">
-<img src="https://i.ibb.co/8gcFTmg3/google-ai-studio.jpg" alt="google-ai-studio made by Bruno Sergio Analista de SEO" border="0"/></a>
+<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# FinancIA
+# Run and deploy your AI Studio app
 
-A vontade de criar este aplicativo nasceu da necessidade de ter uma organização financeira simples e acessível, sem cobrar preços exorbitantes. Este repositório contém tudo o que você precisa para rodar o aplicativo localmente.
+This contains everything you need to run your app locally.
 
-Visualize seu aplicativo no AI Studio: https://ai.studio/apps/92a6b2c1-0edc-4e59-9ce6-d315f74dd5d4
+View your app in AI Studio: https://ai.studio/apps/92a6b2c1-0edc-4e59-9ce6-d315f74dd5d4
 
-## Como rodar localmente
+## Run Locally
 
-**Pré-requisitos:** Node.js
+**Prerequisites:**  Node.js
 
-1. Instale as dependências:
+
+1. Install dependencies:
    `npm install`
-2. Configure o `VITE_GEMINI_API_KEY`, `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` em [.env.local](.env.local) com as suas chaves
-3. Rode o aplicativo:
+2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+3. Run the app:
    `npm run dev`
-
----
-
-**Autor:** Bruno Sergio  
-**LinkedIn:** [linkedin.com/in/brunosergiosilva](https://www.linkedin.com/in/brunosergiosilva/)

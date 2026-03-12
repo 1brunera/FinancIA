@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { Transaction, TransactionType, CategoryOption } from '../types';
-import { Settings, Info, Edit3 } from 'lucide-react';
+import { Transaction, TransactionType, CategoryOption, CreditCard } from '../types';
+import { Settings, Info, Edit3, CreditCard as CreditCardIcon } from 'lucide-react';
 
 interface FinancialChartsProps {
   transactions: Transaction[];
   categories: CategoryOption[];
   monthlyIncome: number; // Recebendo a renda mensal para basear o orçamento
+  creditCards: CreditCard[];
 }
 
-export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, categories, monthlyIncome }) => {
+export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, categories, monthlyIncome, creditCards }) => {
   // Estado para o modelo de orçamento
   const [budgetModel, setBudgetModel] = useState<'50/30/20' | '60/20/20' | '70/20/10' | 'custom'>(() => {
     return (localStorage.getItem('finance_budget_model') as any) || '50/30/20';
@@ -80,6 +81,27 @@ export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, 
       }
       return acc;
     }, [] as { name: string; value: number; categoryId: string; color: string }[]);
+
+  // --- Logic for Credit Card Expenses ---
+  const creditCardExpenseData = transactions
+    .filter(t => t.type === TransactionType.EXPENSE && t.paymentMethodId && t.paymentMethodId !== 'cash')
+    .reduce((acc, curr) => {
+      const existing = acc.find(item => item.cardId === curr.paymentMethodId);
+      if (existing) {
+        existing.value += curr.amount;
+      } else {
+        const cardInfo = creditCards.find(c => c.id === curr.paymentMethodId);
+        if (cardInfo) {
+          acc.push({
+            name: cardInfo.name,
+            value: curr.amount,
+            cardId: curr.paymentMethodId,
+            color: cardInfo.color || '#cbd5e1'
+          });
+        }
+      }
+      return acc;
+    }, [] as { name: string; value: number; cardId: string; color: string }[]);
 
   // --- Logic for Budget Bar Chart ---
   const calculateGroupTotal = (group: 'needs' | 'wants' | 'savings') => {
@@ -198,7 +220,7 @@ export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, 
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                     <div>
-                        <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Necess.</label>
+                        <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Essenciais</label>
                         <div className="relative">
                              <input 
                                 type="number" 
@@ -210,7 +232,7 @@ export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, 
                         </div>
                     </div>
                     <div>
-                        <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Desejos</label>
+                        <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Lazer</label>
                         <div className="relative">
                              <input 
                                 type="number" 
@@ -222,7 +244,7 @@ export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, 
                         </div>
                     </div>
                     <div>
-                        <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Objetivos</label>
+                        <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Investimentos</label>
                         <div className="relative">
                              <input 
                                 type="number" 
@@ -259,19 +281,19 @@ export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, 
             ) : (
                 <>
                     {renderBudgetBar(
-                        "Necessidades", 
+                        "Essenciais", 
                         needsTotal, 
                         modelConfig.needs, 
                         "Moradia, Alimentação, Saúde..."
                     )}
                     {renderBudgetBar(
-                        "Estilo de Vida", 
+                        "Lazer", 
                         wantsTotal, 
                         modelConfig.wants, 
                         "Lazer, Compras, Streaming..."
                     )}
                     {renderBudgetBar(
-                        "Objetivos", 
+                        "Investimentos", 
                         savingsTotal, 
                         modelConfig.savings, 
                         "Investimentos, Dívidas..."
@@ -312,6 +334,40 @@ export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, 
           )}
         </div>
       </div>
+
+      {/* Credit Card Expenses Pie Chart */}
+      {creditCards.length > 0 && (
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800">
+          <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Despesas por Cartão</h3>
+          <div className="h-64 w-full">
+            {creditCardExpenseData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={creditCardExpenseData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {creditCardExpenseData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-slate-400">
+                Sem despesas no cartão
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
