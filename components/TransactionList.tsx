@@ -9,15 +9,17 @@ interface TransactionListProps {
   onUpdateStatus?: (id: string, status: TransactionStatus) => void;
   categories: CategoryOption[];
   creditCards: CreditCardType[];
+  showValues?: boolean;
 }
 
-export const TransactionList: React.FC<TransactionListProps> = ({ transactions, onDelete, onEdit, onUpdateStatus, categories, creditCards }) => {
+export const TransactionList: React.FC<TransactionListProps> = ({ transactions, onDelete, onEdit, onUpdateStatus, categories, creditCards, showValues = true }) => {
   const [filterPayment, setFilterPayment] = useState<string>('all');
 
   const getCategoryLabel = (id: string) => categories.find(c => c.id === id)?.label || id;
   const getCategoryColor = (id: string) => categories.find(c => c.id === id)?.color || '#94a3b8';
 
   const formatCurrency = (value: number) => {
+    if (!showValues) return 'R$ •••••';
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
 

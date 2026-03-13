@@ -23,15 +23,35 @@ const App: React.FC = () => {
   const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error("Error getting session:", error);
+        // If the refresh token is invalid, sign out to clear the local state
+        if (error.message?.includes('Refresh Token') || error.message?.includes('refresh_token_not_found')) {
+          supabase.auth.signOut();
+        }
+      }
       setSession(session);
+      setIsAuthLoading(false);
+    }).catch((err) => {
+      console.error("Caught error getting session:", err);
+      if (err.message?.includes('Refresh Token') || err.message?.includes('refresh_token_not_found')) {
+        supabase.auth.signOut();
+      }
       setIsAuthLoading(false);
     });
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'TOKEN_REFRESHED') {
+        console.log('Token refreshed successfully');
+      }
+      if (event === 'SIGNED_OUT') {
+        setSession(null);
+      } else {
+        setSession(session);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -39,6 +59,7 @@ const App: React.FC = () => {
 
   // --- State Management ---
   const [activeView, setActiveView] = useState('dashboard');
+  const [showValues, setShowValues] = useState(true);
   
   // Sidebar states
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true); // Desktop state
@@ -583,16 +604,35 @@ const App: React.FC = () => {
     // 3. Total Accumulated Balance (Available Now)
     const totalAccumulatedBalance = previousBalance + currentBalance;
 
+    // 4. Budget Forecast (Previsão de orçamento)
+    // Includes pending bills and income up to the end of the selected month
+    const endOfSelectedMonth = new Date(year, month + 1, 0, 23, 59, 59);
+
+    const pendingBills = bills.filter(b => {
+      if (b.isPaid) return false;
+      const bDate = new Date(b.dueDate + 'T12:00:00');
+      return bDate <= endOfSelectedMonth;
+    }).reduce((sum, b) => sum + b.amount, 0);
+
+    const pendingIncome = incomeReminders.filter(i => {
+      if (i.isReceived) return false;
+      const iDate = new Date(i.dueDate + 'T12:00:00');
+      return iDate <= endOfSelectedMonth;
+    }).reduce((sum, i) => sum + i.amount, 0);
+
+    const budgetForecast = totalAccumulatedBalance + pendingIncome - pendingBills;
+
     return {
         previousBalance,
         currentIncome,
         currentExpense,
         currentBalance,
         totalAccumulatedBalance,
+        budgetForecast,
         monthlyTransactions: currentTransactions
     };
 
-  }, [transactions, currentDate]);
+  }, [transactions, currentDate, bills, incomeReminders]);
 
   const monthlyBills = useMemo(() => {
     return bills.filter(b => {
@@ -672,7 +712,7 @@ const App: React.FC = () => {
                                             )}
                                         </div>
                                         <div className="text-right">
-                                             <span className="block text-slate-500 dark:text-slate-400 text-xs mb-0.5">{formatCurrency(note.amount)}</span>
+                                             <span className="block text-slate-500 dark:text-slate-400 text-xs mb-0.5">{showValues ? formatCurrency(note.amount) : 'R$ •••••'}</span>
                                              <span className={`font-bold text-xs ${note.diffDays < 0 ? 'text-red-600' : 'text-orange-600'}`}>
                                                 {note.diffDays < 0 
                                                     ? `Venceu há ${Math.abs(note.diffDays)} dias` 
@@ -696,18 +736,24 @@ const App: React.FC = () => {
                                 <PiggyBank size={80} />
                             </div>
                             <div className="relative z-10">
-                                <div className="flex items-center gap-2 mb-2 md:mb-3">
-                                    <p className="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider">Saldo Disponível Acumulado</p>
-                                    <span className="bg-slate-800 text-[10px] px-2 py-0.5 rounded text-slate-300">Total</span>
+                                <div className="flex items-center justify-between mb-2 md:mb-3">
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider">Previsão de orçamento</p>
+                                        <span className="bg-slate-800 text-[10px] px-2 py-0.5 rounded text-slate-300">Mês Atual</span>
+                                    </div>
+                                    <button 
+                                        onClick={() => setShowValues(!showValues)}
+                                        className="text-slate-400 hover:text-white transition-colors p-1"
+                                    >
+                                        {showValues ? <Eye size={18} /> : <EyeOff size={18} />}
+                                    </button>
                                 </div>
                                 <h2 className="text-3xl md:text-4xl font-bold mb-3 md:mb-4 tracking-tight">
-                                    {formatCurrency(financialData.totalAccumulatedBalance)}
+                                    {showValues ? formatCurrency(financialData.budgetForecast) : 'R$ •••••'}
                                 </h2>
                                 <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
                                     <History size={14} />
-                                    <span>Anterior: {formatCurrency(financialData.previousBalance)}</span>
-                                    <span>+</span>
-                                    <span>Mês Atual: {formatCurrency(financialData.currentBalance)}</span>
+                                    <span>Saldo Atual: {showValues ? formatCurrency(financialData.totalAccumulatedBalance) : 'R$ •••••'}</span>
                                 </div>
                             </div>
                         </div>
@@ -719,7 +765,7 @@ const App: React.FC = () => {
                             </div>
                             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 md:mb-3">Receitas</p>
                             <h2 className="text-2xl md:text-3xl font-bold text-slate-800 dark:text-white tracking-tight">
-                                {formatCurrency(financialData.currentIncome)}
+                                {showValues ? formatCurrency(financialData.currentIncome) : 'R$ •••••'}
                             </h2>
                             <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 font-medium">Entradas este mês</p>
                         </div>
@@ -731,7 +777,7 @@ const App: React.FC = () => {
                             </div>
                             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 md:mb-3">Despesas</p>
                             <h2 className="text-2xl md:text-3xl font-bold text-slate-800 dark:text-white tracking-tight">
-                                {formatCurrency(financialData.currentExpense)}
+                                {showValues ? formatCurrency(financialData.currentExpense) : 'R$ •••••'}
                             </h2>
                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 font-medium">Saídas este mês</p>
                         </div>
@@ -808,14 +854,14 @@ const App: React.FC = () => {
                                             </div>
                                             <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Fatura Atual</p>
                                             <h3 className="text-2xl font-bold text-slate-800 dark:text-white tracking-tight">
-                                                {formatCurrency(amount)}
+                                                {showValues ? formatCurrency(amount) : 'R$ •••••'}
                                             </h3>
                                             <div className="mt-3 flex items-center justify-between text-xs font-medium text-slate-500 dark:text-slate-400">
                                                 <span>Vence dia {card.dueDay}</span>
                                                 <span>Melhor dia: <span className="text-green-500 font-bold">{card.closingDay === 31 ? 1 : card.closingDay + 1}</span></span>
                                             </div>
                                             <div className="mt-1 flex items-center justify-between text-xs font-medium text-slate-500 dark:text-slate-400">
-                                                <span>Limite: {formatCurrency(card.limit)}</span>
+                                                <span>Limite: {showValues ? formatCurrency(card.limit) : 'R$ •••••'}</span>
                                             </div>
                                         </div>
                                     );
@@ -830,6 +876,7 @@ const App: React.FC = () => {
                         monthlyIncome={financialData.currentIncome}
                         creditCards={creditCards}
                         config={dashboardConfig}
+                        showValues={showValues}
                     />
 
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-6 border-t border-slate-200 dark:border-slate-700">
@@ -848,6 +895,7 @@ const App: React.FC = () => {
                         onUpdateStatus={handleUpdateTransactionStatus}
                         categories={categories}
                         creditCards={creditCards}
+                        showValues={showValues}
                     />
                 </div>
             );
@@ -862,6 +910,7 @@ const App: React.FC = () => {
                         onDeleteInvestment={handleDeleteInvestment}
                         onAddGoal={handleAddGoal}
                         onDeleteGoal={handleDeleteGoal}
+                        showValues={showValues}
                     />
                 </div>
             );

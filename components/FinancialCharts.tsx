@@ -13,9 +13,10 @@ interface FinancialChartsProps {
     showCategoryChart: boolean;
     showCardChart: boolean;
   };
+  showValues?: boolean;
 }
 
-export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, categories, monthlyIncome, creditCards, config = { showBudget: true, showCategoryChart: true, showCardChart: true } }) => {
+export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, categories, monthlyIncome, creditCards, config = { showBudget: true, showCategoryChart: true, showCardChart: true }, showValues = true }) => {
   // Estado para o modelo de orçamento
   const [budgetModel, setBudgetModel] = useState<'50/30/20' | '60/20/20' | '70/20/10' | 'custom'>(() => {
     return (localStorage.getItem('finance_budget_model') as any) || '50/30/20';
@@ -68,6 +69,7 @@ export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, 
 
   // Helper for currency format
   const formatCurrency = (value: number) => {
+    if (!showValues) return 'R$ •••••';
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
 

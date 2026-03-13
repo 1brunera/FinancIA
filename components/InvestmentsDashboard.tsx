@@ -24,6 +24,7 @@ interface InvestmentsDashboardProps {
   onDeleteInvestment: (id: string) => void;
   onAddGoal: (goal: InvestmentGoal) => void;
   onDeleteGoal: (id: string) => void;
+  showValues?: boolean;
 }
 
 export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
@@ -33,7 +34,8 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
   onAddInvestment,
   onDeleteInvestment,
   onAddGoal,
-  onDeleteGoal
+  onDeleteGoal,
+  showValues = true
 }) => {
   // --- States for interactivity ---
   const [emergencyMonths, setEmergencyMonths] = useState<3 | 6 | 12>(6);
@@ -153,7 +155,10 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 5); // Last 5
 
-  const formatCurrency = (val: number) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const formatCurrency = (val: number) => {
+    if (!showValues) return 'R$ •••••';
+    return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  };
 
   const getRemainingTime = (dateStr: string) => {
       const deadline = new Date(dateStr);
