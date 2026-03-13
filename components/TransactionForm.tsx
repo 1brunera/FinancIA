@@ -10,20 +10,22 @@ interface TransactionFormProps {
   onClose: () => void;
   categories: CategoryOption[];
   creditCards: CreditCard[];
+  fixedPaymentMethodId?: string;
 }
 
-export const TransactionForm: React.FC<TransactionFormProps> = ({ initialData, onAdd, onEdit, onClose, categories, creditCards }) => {
+export const TransactionForm: React.FC<TransactionFormProps> = ({ initialData, onAdd, onEdit, onClose, categories, creditCards, fixedPaymentMethodId }) => {
   const [description, setDescription] = useState(initialData?.description || '');
   const [amount, setAmount] = useState(initialData?.amount.toString() || '');
   const [type, setType] = useState<TransactionType>(initialData?.type || TransactionType.EXPENSE);
   const [category, setCategory] = useState(initialData?.category || '');
   const [date, setDate] = useState(initialData?.date || new Date().toISOString().split('T')[0]);
-  const [paymentMethodId, setPaymentMethodId] = useState(initialData?.paymentMethodId || 'cash');
+  const [paymentMethodId, setPaymentMethodId] = useState(fixedPaymentMethodId || initialData?.paymentMethodId || 'cash');
   const [status, setStatus] = useState<TransactionStatus>(initialData?.status || 'Pendente');
   
-  // Installment State
-  const [isInstallment, setIsInstallment] = useState(false);
+  // Installment / Recurrence State
+  const [paymentType, setPaymentType] = useState<'avista' | 'parcelado' | 'recorrente'>('avista');
   const [installments, setInstallments] = useState(2);
+  const [recurrenceMonths, setRecurrenceMonths] = useState(12);
 
   // Filter categories based on type
   const availableCategories = type === TransactionType.INCOME 
@@ -60,22 +62,30 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ initialData, o
     
     // Determine actual number of installments based on UI state
     const isCredit = type === TransactionType.EXPENSE && paymentMethodId !== 'cash';
-    const finalInstallments = (isCredit && isInstallment) ? Math.max(2, installments) : 1;
+    const finalInstallments = (isCredit && paymentType === 'parcelado') ? Math.max(2, installments) : 1;
+    const isRecurring = (isCredit && paymentType === 'recorrente');
+    const totalMonths = isRecurring ? Math.max(2, recurrenceMonths) : finalInstallments;
     
     const newTransactions: Omit<Transaction, 'id'>[] = [];
     const installmentGroupId = crypto.randomUUID();
     const installmentAmount = finalInstallments > 1 ? numAmount / finalInstallments : numAmount;
 
-    for (let i = 0; i < finalInstallments; i++) {
+    for (let i = 0; i < totalMonths; i++) {
         const currentDate = new Date(date);
-        // Add months for subsequent installments
+        // Add months for subsequent installments/recurrences
         currentDate.setMonth(currentDate.getMonth() + i);
         
         const dateStr = currentDate.toISOString().split('T')[0];
 
+        let txDescription = description;
+        if (finalInstallments > 1) {
+            txDescription = `${description} (${i + 1} de ${finalInstallments})`;
+        } else if (isRecurring) {
+            txDescription = `${description} (Recorrente ${i + 1}/${totalMonths})`;
+        }
+
         newTransactions.push({
-            // Changed format to "1 de 10" instead of "1/10"
-            description: finalInstallments > 1 ? `${description} (${i + 1} de ${finalInstallments})` : description,
+            description: txDescription,
             amount: installmentAmount,
             type,
             category,
@@ -199,7 +209,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ initialData, o
           </div>
 
           {/* Payment Method (Only for Expense) */}
-          {type === TransactionType.EXPENSE && (
+          {type === TransactionType.EXPENSE && !fixedPaymentMethodId && (
             <div className="space-y-3">
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">Forma de Pagamento</label>
                 
@@ -262,33 +272,42 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ initialData, o
                     )}
                 </div>
 
-                {/* Installments Logic (Only if Credit Card is selected and NOT editing) */}
+                {/* Installments / Recurrence Logic (Only if Credit Card is selected and NOT editing) */}
                 {!initialData && isCreditCard && (
                     <div className="animate-fade-in bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-700 mt-4">
-                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Parcelamento</label>
+                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Tipo de Pagamento</label>
                         
                         <div className="flex bg-white dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-700 mb-4">
                             <button
                                 type="button"
-                                onClick={() => setIsInstallment(false)}
-                                className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
-                                    !isInstallment ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-950'
+                                onClick={() => setPaymentType('avista')}
+                                className={`flex-1 py-2 text-[10px] md:text-xs font-bold rounded-lg transition-all ${
+                                    paymentType === 'avista' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-950'
                                 }`}
                             >
                                 À vista (1x)
                             </button>
                             <button
                                 type="button"
-                                onClick={() => setIsInstallment(true)}
-                                className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
-                                    isInstallment ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-950'
+                                onClick={() => setPaymentType('parcelado')}
+                                className={`flex-1 py-2 text-[10px] md:text-xs font-bold rounded-lg transition-all ${
+                                    paymentType === 'parcelado' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-950'
                                 }`}
                             >
                                 Parcelado
                             </button>
+                            <button
+                                type="button"
+                                onClick={() => setPaymentType('recorrente')}
+                                className={`flex-1 py-2 text-[10px] md:text-xs font-bold rounded-lg transition-all ${
+                                    paymentType === 'recorrente' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-950'
+                                }`}
+                            >
+                                Fixo/Recorrente
+                            </button>
                         </div>
 
-                        {isInstallment && (
+                        {paymentType === 'parcelado' && (
                             <div className="animate-fade-in">
                                 <div className="flex items-center justify-between mb-3">
                                     <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Quantidade</span>
@@ -313,6 +332,37 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ initialData, o
                                         {formatCurrency(parseFloat(amount || '0') / installments)}
                                     </span>
                                 </div>
+                            </div>
+                        )}
+
+                        {paymentType === 'recorrente' && (
+                            <div className="animate-fade-in">
+                                <div className="flex items-center justify-between mb-3">
+                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Duração (Meses)</span>
+                                    <div className="flex items-center gap-3">
+                                        <button 
+                                            type="button" 
+                                            onClick={() => setRecurrenceMonths(Math.max(2, recurrenceMonths - 1))}
+                                            className="w-8 h-8 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-slate-100 dark:bg-slate-800"
+                                        >-</button>
+                                        <span className="font-bold text-lg w-8 text-center">{recurrenceMonths}</span>
+                                        <button 
+                                            type="button" 
+                                            onClick={() => setRecurrenceMonths(Math.min(120, recurrenceMonths + 1))}
+                                            className="w-8 h-8 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-slate-100 dark:bg-slate-800"
+                                        >+</button>
+                                    </div>
+                                </div>
+                                
+                                <div className="bg-white dark:bg-slate-900 p-3 rounded-lg border border-indigo-100 flex justify-between items-center">
+                                    <span className="text-xs text-slate-500 dark:text-slate-400">Valor mensal:</span>
+                                    <span className="text-sm font-bold text-indigo-600">
+                                        {formatCurrency(parseFloat(amount || '0'))}
+                                    </span>
+                                </div>
+                                <p className="text-xs text-slate-500 mt-2 text-center">
+                                    Serão criadas {recurrenceMonths} transações de {formatCurrency(parseFloat(amount || '0'))}.
+                                </p>
                             </div>
                         )}
                     </div>

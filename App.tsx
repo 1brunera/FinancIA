@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Bell, Calendar, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Wallet, Menu, History, PiggyBank, Sun, Moon, CreditCard as CreditCardIcon } from 'lucide-react';
+import { Plus, Bell, Calendar, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Wallet, Menu, History, PiggyBank, Sun, Moon, CreditCard as CreditCardIcon, Settings2, Eye, EyeOff } from 'lucide-react';
 import { Transaction, TransactionType, CategoryOption, Bill, CreditCard, IncomeReminder, Investment, InvestmentGoal } from './types';
 import { MOCK_TRANSACTIONS, DEFAULT_CATEGORIES, MOCK_INVESTMENTS, MOCK_GOALS } from './constants';
 import { TransactionForm } from './components/TransactionForm';
@@ -123,6 +123,32 @@ const App: React.FC = () => {
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('finance_theme') || 'light';
   });
+
+  const [dashboardConfig, setDashboardConfig] = useState(() => {
+    try {
+      const saved = localStorage.getItem('finance_dashboard_config');
+      return saved ? JSON.parse(saved) : {
+        showInvoices: true,
+        showBudget: true,
+        showCategoryChart: true,
+        showCardChart: true
+      };
+    } catch {
+      return {
+        showInvoices: true,
+        showBudget: true,
+        showCategoryChart: true,
+        showCardChart: true
+      };
+    }
+  });
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
+
+  const toggleDashboardConfig = (key: keyof typeof dashboardConfig) => {
+    const newConfig = { ...dashboardConfig, [key]: !dashboardConfig[key] };
+    setDashboardConfig(newConfig);
+    localStorage.setItem('finance_dashboard_config', JSON.stringify(newConfig));
+  };
 
   useEffect(() => {
     if (theme === 'dark') {
@@ -568,6 +594,20 @@ const App: React.FC = () => {
 
   }, [transactions, currentDate]);
 
+  const monthlyBills = useMemo(() => {
+    return bills.filter(b => {
+      const bDate = new Date(b.dueDate + 'T12:00:00');
+      return bDate.getMonth() === currentDate.getMonth() && bDate.getFullYear() === currentDate.getFullYear();
+    });
+  }, [bills, currentDate]);
+
+  const monthlyIncomes = useMemo(() => {
+    return incomeReminders.filter(i => {
+      const iDate = new Date(i.dueDate + 'T12:00:00');
+      return iDate.getMonth() === currentDate.getMonth() && iDate.getFullYear() === currentDate.getFullYear();
+    });
+  }, [incomeReminders, currentDate]);
+
   const activeNotifications = useMemo(() => {
     const today = new Date();
     today.setHours(0,0,0,0);
@@ -697,8 +737,54 @@ const App: React.FC = () => {
                         </div>
                     </div>
 
+                    {/* Dashboard Config Toggles */}
+                    <div className="flex justify-end mt-4 mb-2 relative">
+                        <button 
+                            onClick={() => setIsConfigOpen(!isConfigOpen)}
+                            className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors bg-white dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm"
+                        >
+                            <Settings2 size={14} /> Personalizar Dashboard
+                        </button>
+                        
+                        {isConfigOpen && (
+                            <div className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 p-3 z-50 animate-fade-in">
+                                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 px-2">Mostrar/Ocultar</h4>
+                                <div className="space-y-1">
+                                    <button 
+                                        onClick={() => toggleDashboardConfig('showInvoices')}
+                                        className="w-full flex items-center justify-between px-2 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm font-medium text-slate-700 dark:text-slate-200"
+                                    >
+                                        <span>Faturas de Cartão</span>
+                                        {dashboardConfig.showInvoices ? <Eye size={16} className="text-primary-500" /> : <EyeOff size={16} className="text-slate-400" />}
+                                    </button>
+                                    <button 
+                                        onClick={() => toggleDashboardConfig('showBudget')}
+                                        className="w-full flex items-center justify-between px-2 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm font-medium text-slate-700 dark:text-slate-200"
+                                    >
+                                        <span>Modelo de Orçamento</span>
+                                        {dashboardConfig.showBudget ? <Eye size={16} className="text-primary-500" /> : <EyeOff size={16} className="text-slate-400" />}
+                                    </button>
+                                    <button 
+                                        onClick={() => toggleDashboardConfig('showCategoryChart')}
+                                        className="w-full flex items-center justify-between px-2 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm font-medium text-slate-700 dark:text-slate-200"
+                                    >
+                                        <span>Despesas por Categoria</span>
+                                        {dashboardConfig.showCategoryChart ? <Eye size={16} className="text-primary-500" /> : <EyeOff size={16} className="text-slate-400" />}
+                                    </button>
+                                    <button 
+                                        onClick={() => toggleDashboardConfig('showCardChart')}
+                                        className="w-full flex items-center justify-between px-2 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm font-medium text-slate-700 dark:text-slate-200"
+                                    >
+                                        <span>Despesas por Cartão</span>
+                                        {dashboardConfig.showCardChart ? <Eye size={16} className="text-primary-500" /> : <EyeOff size={16} className="text-slate-400" />}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
                     {/* Credit Card Invoices */}
-                    {creditCards.length > 0 && (
+                    {creditCards.length > 0 && dashboardConfig.showInvoices && (
                         <div className="mt-8">
                             <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Faturas de Cartão ({formatCurrentMonth()})</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -726,6 +812,9 @@ const App: React.FC = () => {
                                             </h3>
                                             <div className="mt-3 flex items-center justify-between text-xs font-medium text-slate-500 dark:text-slate-400">
                                                 <span>Vence dia {card.dueDay}</span>
+                                                <span>Melhor dia: <span className="text-green-500 font-bold">{card.closingDay === 31 ? 1 : card.closingDay + 1}</span></span>
+                                            </div>
+                                            <div className="mt-1 flex items-center justify-between text-xs font-medium text-slate-500 dark:text-slate-400">
                                                 <span>Limite: {formatCurrency(card.limit)}</span>
                                             </div>
                                         </div>
@@ -740,6 +829,7 @@ const App: React.FC = () => {
                         categories={categories} 
                         monthlyIncome={financialData.currentIncome}
                         creditCards={creditCards}
+                        config={dashboardConfig}
                     />
 
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-6 border-t border-slate-200 dark:border-slate-700">
@@ -801,11 +891,12 @@ const App: React.FC = () => {
         case 'bills':
             return (
                 <div className="space-y-6 animate-fade-in">
+                    <MonthSelector />
                     <div className="flex justify-between items-center mb-2">
-                        <h2 className="text-xl md:text-2xl font-bold text-slate-800 dark:text-white">Contas a pagar</h2>
+                        <h2 className="text-xl md:text-2xl font-bold text-slate-800 dark:text-white">Contas a pagar de {formatCurrentMonth()}</h2>
                     </div>
                     <BillReminders 
-                        bills={bills} 
+                        bills={monthlyBills} 
                         onAddBill={handleAddBill} 
                         onEditBill={handleEditBill}
                         onDeleteBill={handleDeleteBill}
@@ -818,11 +909,12 @@ const App: React.FC = () => {
         case 'income-reminders':
             return (
                 <div className="space-y-6 animate-fade-in">
+                    <MonthSelector />
                     <div className="flex justify-between items-center mb-2">
-                        <h2 className="text-xl md:text-2xl font-bold text-slate-800 dark:text-white">Contas a receber</h2>
+                        <h2 className="text-xl md:text-2xl font-bold text-slate-800 dark:text-white">Contas a receber de {formatCurrentMonth()}</h2>
                     </div>
                     <IncomeReminders 
-                        incomes={incomeReminders}
+                        incomes={monthlyIncomes}
                         onAddIncome={handleAddIncome}
                         onEditIncome={handleEditIncome}
                         onReceiveIncome={handleReceiveIncome}
@@ -839,9 +931,13 @@ const App: React.FC = () => {
                         cards={creditCards}
                         // Passing full transactions array here
                         transactions={transactions}
+                        categories={categories}
                         onAddCard={handleAddCreditCard}
                         onUpdateCard={handleUpdateCreditCard}
                         onDeleteCard={handleDeleteCreditCard}
+                        onAddTransaction={handleAddTransactions}
+                        onEditTransaction={(t) => setEditingTransaction(t)}
+                        onDeleteTransaction={handleDeleteTransaction}
                     />
                 </div>
             );

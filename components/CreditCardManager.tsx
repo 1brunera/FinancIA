@@ -1,18 +1,23 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, CreditCard, AlertCircle, Wallet, TrendingUp, DollarSign, ArrowLeft, Calendar, Layers, Pencil, X, Check } from 'lucide-react';
-import { CreditCard as CreditCardType, Transaction, TransactionType } from '../types';
+import { CreditCard as CreditCardType, Transaction, TransactionType, CategoryOption } from '../types';
 import { COLOR_PALETTE, DEFAULT_CATEGORIES } from '../constants';
 import { TransactionList } from './TransactionList';
+import { TransactionForm } from './TransactionForm';
 
 interface CreditCardManagerProps {
   cards: CreditCardType[];
   transactions: Transaction[];
+  categories: CategoryOption[];
   onAddCard: (card: Omit<CreditCardType, 'id'>) => void;
   onUpdateCard: (card: CreditCardType) => void;
   onDeleteCard: (id: string) => void;
+  onAddTransaction: (transactions: Omit<Transaction, 'id'>[]) => void;
+  onEditTransaction: (transaction: Transaction) => void;
+  onDeleteTransaction: (id: string) => void;
 }
 
-export const CreditCardManager: React.FC<CreditCardManagerProps> = ({ cards, transactions, onAddCard, onUpdateCard, onDeleteCard }) => {
+export const CreditCardManager: React.FC<CreditCardManagerProps> = ({ cards, transactions, categories, onAddCard, onUpdateCard, onDeleteCard, onAddTransaction, onEditTransaction, onDeleteTransaction }) => {
   const [name, setName] = useState('');
   const [limit, setLimit] = useState('');
   const [closingDay, setClosingDay] = useState('');
@@ -23,6 +28,8 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({ cards, tra
   // State for detail view
   const [selectedCard, setSelectedCard] = useState<CreditCardType | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isAddingCard, setIsAddingCard] = useState(false);
+  const [isAddingTransaction, setIsAddingTransaction] = useState(false);
 
   // Edit State
   const [editName, setEditName] = useState('');
@@ -55,6 +62,8 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({ cards, tra
     setLimit('');
     setClosingDay('');
     setDueDay('');
+    setSelectedColor(COLOR_PALETTE[0]);
+    setIsAddingCard(false);
   };
 
   const startEditing = (card: CreditCardType) => {
@@ -106,6 +115,10 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({ cards, tra
   const totalLimit = cards.reduce((acc, card) => acc + card.limit, 0);
   const totalSpentGlobal = getMonthlyExpenses();
   const totalAvailable = totalLimit - totalSpentGlobal;
+
+  // Global card transactions
+  const globalCardTransactions = transactions.filter(t => cards.some(c => c.id === t.paymentMethodId));
+  globalCardTransactions.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   // --- DETAIL VIEW RENDER ---
   if (selectedCard) {
@@ -263,12 +276,15 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({ cards, tra
                      </div>
                      <div className="col-span-2 md:col-span-1">
                          <p className="text-[10px] md:text-xs font-bold text-white/70 uppercase tracking-wider mb-1">Disponível</p>
-                         <p className="text-lg md:text-xl font-bold text-white">{formatCurrency(cardAvailable)}</p>
+                         <div className="flex items-center gap-2">
+                             <p className={`text-lg md:text-xl font-bold ${cardSpent > selectedCard.limit * 0.8 ? 'text-red-300' : 'text-white'}`}>{formatCurrency(cardAvailable)}</p>
+                             {cardSpent > selectedCard.limit * 0.8 && <AlertCircle size={16} className="text-red-300" title="Gasto excedeu 80% do limite" />}
+                         </div>
                      </div>
                 </div>
                 
                 <div className="relative z-10 flex justify-between items-end mt-6 border-t border-white/20 pt-4">
-                    <div className="flex gap-6">
+                    <div className="flex gap-4 md:gap-6">
                         <div>
                             <p className="text-[10px] text-white/70 uppercase">Fechamento</p>
                             <p className="font-bold">Dia {selectedCard.closingDay}</p>
@@ -277,22 +293,62 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({ cards, tra
                             <p className="text-[10px] text-white/70 uppercase">Vencimento</p>
                             <p className="font-bold">Dia {selectedCard.dueDay}</p>
                         </div>
+                        <div>
+                            <p className="text-[10px] text-white/70 uppercase">Melhor Dia</p>
+                            <p className="font-bold text-green-300">Dia {selectedCard.closingDay === 31 ? 1 : selectedCard.closingDay + 1}</p>
+                        </div>
                     </div>
-                    <CreditCard size={32} className="text-white/60" />
+                    <CreditCard size={32} className="text-white/60 hidden md:block" />
                 </div>
             </div>
 
             <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 p-4 md:p-6">
-                <div className="flex items-center gap-2 mb-4 md:mb-6">
-                    <Layers className="text-primary-600" size={24} />
-                    <h3 className="text-lg font-bold text-slate-800 dark:text-white">Histórico de Transações</h3>
+                <div className="flex items-center justify-between mb-4 md:mb-6">
+                    <div className="flex items-center gap-2">
+                        <Layers className="text-primary-600" size={24} />
+                        <h3 className="text-lg font-bold text-slate-800 dark:text-white">Histórico de Transações</h3>
+                    </div>
+                    <button
+                        onClick={() => setIsAddingTransaction(true)}
+                        className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-primary-700 transition-colors flex items-center gap-2"
+                    >
+                        <Plus size={16} /> Adicionar gasto
+                    </button>
                 </div>
                 
+                {isAddingTransaction && (
+                    <div className="mb-6 p-4 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                        <TransactionForm
+                            onAdd={(transactions) => {
+                                const newTransactions = transactions.map(t => ({
+                                    ...t,
+                                    paymentMethodId: selectedCard.id,
+                                    type: TransactionType.EXPENSE // Force expense
+                                }));
+                                onAddTransaction(newTransactions);
+                                setIsAddingTransaction(false);
+                            }}
+                            onClose={() => setIsAddingTransaction(false)}
+                            categories={categories}
+                            creditCards={cards}
+                            initialData={{
+                                description: '',
+                                amount: 0,
+                                type: TransactionType.EXPENSE,
+                                category: '',
+                                date: new Date().toISOString().split('T')[0],
+                                paymentMethodId: selectedCard.id
+                            } as any}
+                        />
+                    </div>
+                )}
+
                 {cardTransactions.length > 0 ? (
                     <TransactionList 
                         transactions={cardTransactions}
-                        onDelete={() => {}} // Disable delete from here or implement bubbling
-                        categories={DEFAULT_CATEGORIES} // Should pass actual categories if available
+                        onDelete={onDeleteTransaction}
+                        onEdit={onEditTransaction}
+                        categories={categories}
                         creditCards={cards}
                     />
                 ) : (
@@ -343,26 +399,40 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({ cards, tra
       </div>
 
       <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
-        <div className="px-4 py-3 md:px-6 md:py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50">
+        <div className="px-4 py-3 md:px-6 md:py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 flex justify-between items-center">
             <h3 className="text-lg font-semibold text-slate-800 dark:text-white flex items-center gap-2">
             <CreditCard className="text-primary-600" size={20} />
             Meus Cartões
             </h3>
+            {!isAddingCard && (
+                <button
+                    onClick={() => setIsAddingCard(true)}
+                    className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-primary-700 transition-colors flex items-center gap-2"
+                >
+                    <Plus size={16} /> Adicionar novo cartão
+                </button>
+            )}
         </div>
         
-        <div className="p-4 md:p-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className={`p-4 md:p-6 grid grid-cols-1 ${isAddingCard ? 'lg:grid-cols-2' : ''} gap-8`}>
             {/* Form */}
-            <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-xl border border-slate-200 dark:border-slate-700 order-2 lg:order-1">
-            <h4 className="font-medium text-slate-800 dark:text-white mb-4">Novo Cartão</h4>
-            
-            {error && (
-                <div className="mb-4 p-3 bg-red-50 text-red-600 text-xs font-bold rounded-lg flex items-center gap-2 border border-red-100">
-                    <AlertCircle size={16} />
-                    {error}
+            {isAddingCard && (
+                <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-xl border border-slate-200 dark:border-slate-700 order-2 lg:order-1">
+                <div className="flex justify-between items-center mb-4">
+                    <h4 className="font-medium text-slate-800 dark:text-white">Novo Cartão</h4>
+                    <button onClick={() => setIsAddingCard(false)} className="text-slate-400 hover:text-slate-600">
+                        <X size={20} />
+                    </button>
                 </div>
-            )}
+                
+                {error && (
+                    <div className="mb-4 p-3 bg-red-50 text-red-600 text-xs font-bold rounded-lg flex items-center gap-2 border border-red-100">
+                        <AlertCircle size={16} />
+                        {error}
+                    </div>
+                )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                 <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Nome do Cartão</label>
                 <input
@@ -439,9 +509,10 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({ cards, tra
                 </button>
             </form>
             </div>
+            )}
 
             {/* List */}
-            <div className="space-y-4 order-1 lg:order-2">
+            <div className={`space-y-4 ${isAddingCard ? 'order-1 lg:order-2' : ''}`}>
             {cards.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-slate-400 text-sm italic py-8">
                     Nenhum cartão cadastrado.
@@ -475,7 +546,14 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({ cards, tra
                         <div className="mt-5 md:mt-6 flex justify-between items-end relative z-10">
                              <div>
                                  <p className="text-[10px] text-white/80 uppercase tracking-wider font-bold">Disponível</p>
-                                 <p className="font-bold text-base md:text-lg drop-shadow-sm">{formatCurrency(available)}</p>
+                                 <div className="flex items-center gap-2">
+                                     <p className={`font-bold text-base md:text-lg drop-shadow-sm ${cardSpent > card.limit * 0.8 ? 'text-red-300' : ''}`}>{formatCurrency(available)}</p>
+                                     {cardSpent > card.limit * 0.8 && <AlertCircle size={14} className="text-red-300" title="Gasto excedeu 80% do limite" />}
+                                 </div>
+                             </div>
+                             <div className="text-right">
+                                 <p className="text-[10px] text-white/80 uppercase tracking-wider font-bold">Melhor Dia</p>
+                                 <p className="font-medium text-green-300">Dia {card.closingDay === 31 ? 1 : card.closingDay + 1}</p>
                              </div>
                              <div className="text-right">
                                  <p className="text-[10px] text-white/80 uppercase tracking-wider font-bold">Fechamento</p>
@@ -487,6 +565,28 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({ cards, tra
             )}
             </div>
         </div>
+      </div>
+
+      {/* Global Transaction History */}
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 p-4 md:p-6">
+          <div className="flex items-center gap-2 mb-4 md:mb-6">
+              <Layers className="text-primary-600" size={24} />
+              <h3 className="text-lg font-bold text-slate-800 dark:text-white">Histórico de Transações (Todos os Cartões)</h3>
+          </div>
+          
+          {globalCardTransactions.length > 0 ? (
+              <TransactionList 
+                  transactions={globalCardTransactions}
+                  onDelete={onDeleteTransaction}
+                  onEdit={onEditTransaction}
+                  categories={categories}
+                  creditCards={cards}
+              />
+          ) : (
+              <div className="text-center py-10 text-slate-400">
+                  Nenhuma transação registrada em cartões de crédito.
+              </div>
+          )}
       </div>
     </div>
   );

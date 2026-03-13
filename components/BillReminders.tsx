@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Check, Trash2, Calendar as CalendarIcon, List, Bell, Repeat, Eye, EyeOff, X, AlertCircle, CreditCard, Banknote, Calendar } from 'lucide-react';
+import { Plus, Check, Trash2, Calendar as CalendarIcon, List, Bell, Repeat, Eye, EyeOff, X, AlertCircle, CreditCard, Banknote, Calendar, Edit3 } from 'lucide-react';
 import { Bill, RecurrenceType, CreditCard as CreditCardType, CategoryOption } from '../types';
 import { EXPENSE_CATEGORIES } from '../constants';
 
@@ -576,6 +576,14 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
                             </div>
                             
                             <div className="flex items-center gap-2 pl-4 border-l border-slate-100 dark:border-slate-800">
+                                <button
+                                    onClick={() => openEditModal(bill)}
+                                    className={`p-2 rounded-lg transition-colors ${bill.id.startsWith('cc-invoice-') ? 'text-slate-200 cursor-not-allowed' : 'text-slate-300 hover:text-indigo-500 hover:bg-indigo-50'}`}
+                                    title={bill.id.startsWith('cc-invoice-') ? "Faturas de cartão não podem ser editadas manualmente" : "Editar"}
+                                    disabled={bill.id.startsWith('cc-invoice-')}
+                                >
+                                    <Edit3 size={20} />
+                                </button>
                                 <button
                                     onClick={() => onDeleteBill(bill.id)}
                                     className={`p-2 rounded-lg transition-colors ${bill.id.startsWith('cc-invoice-') ? 'text-slate-200 cursor-not-allowed' : 'text-slate-300 hover:text-red-500 hover:bg-red-50'}`}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Check, Trash2, Calendar as CalendarIcon, List, Repeat, X, ArrowUpCircle } from 'lucide-react';
+import { Plus, Check, Trash2, Calendar as CalendarIcon, List, Repeat, X, ArrowUpCircle, Edit3 } from 'lucide-react';
 import { IncomeReminder, RecurrenceType, CategoryOption } from '../types';
 import { INCOME_CATEGORIES } from '../constants';
 
@@ -485,6 +485,13 @@ export const IncomeReminders: React.FC<IncomeRemindersProps> = ({ incomes, onAdd
                             </div>
                             
                             <div className="flex items-center gap-2 pl-4 border-l border-slate-100 dark:border-slate-800">
+                                <button
+                                    onClick={() => openEditModal(inc)}
+                                    className="p-2 text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-colors"
+                                    title="Editar"
+                                >
+                                    <Edit3 size={20} />
+                                </button>
                                 <button
                                     onClick={() => onDeleteIncome(inc.id)}
                                     className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"

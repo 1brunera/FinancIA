@@ -45,7 +45,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const isManagementActive = ['transactions', 'bills', 'income-reminders', 'credit-cards', 'categories'].includes(activeView);
 
   const managementItems = [
-    { id: 'transactions', label: 'Histórico', icon: List },
+    { id: 'transactions', label: 'Transações', icon: List },
     { id: 'bills', label: 'Contas a Pagar', icon: Receipt },
     { id: 'income-reminders', label: 'A Receber', icon: Banknote },
     { id: 'credit-cards', label: 'Cartões', icon: CreditCard },
@@ -82,7 +82,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 py-6 px-3 space-y-2 overflow-y-auto custom-scrollbar">
+      <nav className="flex-1 py-6 px-3 space-y-4 overflow-y-auto custom-scrollbar">
         {/* Dashboard */}
         <button
           onClick={() => onNavigate('dashboard')}
@@ -119,7 +119,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="h-px bg-slate-200 dark:bg-slate-800 my-2"></div>
 
         {/* Gestão Group (Collapsible) */}
-        <div className="space-y-1">
+        <div className="space-y-2">
             <button
                 onClick={() => {
                     if (!isExpanded && !isMobileOpen) {
@@ -147,7 +147,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             {/* Submenu */}
             {((isExpanded || isMobileOpen) && isManagementOpen) && (
-                <div className="ml-4 pl-4 border-l border-slate-200 dark:border-slate-700 dark:border-slate-800 space-y-1 mt-1 animate-fade-in">
+                <div className="ml-4 pl-4 border-l border-slate-200 dark:border-slate-700 dark:border-slate-800 space-y-2 mt-2 animate-fade-in">
                     {managementItems.map(item => {
                         const Icon = item.icon;
                         const isActive = activeView === item.id;
@@ -186,6 +186,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         </button>
 
+      </nav>
+
+      {/* Footer / Toggle */}
+      <div className="p-4 border-t border-slate-200 dark:border-slate-700 dark:border-slate-800 space-y-3">
         {/* Settings */}
         <button
           onClick={() => onNavigate('settings')}
@@ -202,10 +206,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         </button>
 
-      </nav>
-
-      {/* Footer / Toggle */}
-      <div className="p-4 border-t border-slate-200 dark:border-slate-700 dark:border-slate-800 space-y-2">
         <button
           onClick={handleLogout}
           className="w-full flex items-center gap-3 p-3 rounded-xl transition-all text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-300"

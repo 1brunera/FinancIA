@@ -8,9 +8,14 @@ interface FinancialChartsProps {
   categories: CategoryOption[];
   monthlyIncome: number; // Recebendo a renda mensal para basear o orçamento
   creditCards: CreditCard[];
+  config?: {
+    showBudget: boolean;
+    showCategoryChart: boolean;
+    showCardChart: boolean;
+  };
 }
 
-export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, categories, monthlyIncome, creditCards }) => {
+export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, categories, monthlyIncome, creditCards, config = { showBudget: true, showCategoryChart: true, showCardChart: true } }) => {
   // Estado para o modelo de orçamento
   const [budgetModel, setBudgetModel] = useState<'50/30/20' | '60/20/20' | '70/20/10' | 'custom'>(() => {
     return (localStorage.getItem('finance_budget_model') as any) || '50/30/20';
@@ -26,10 +31,12 @@ export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, 
   const [customSavings, setCustomSavings] = useState(() => {
     return Number(localStorage.getItem('finance_custom_savings')) || 20;
   });
+  const [isEditingCustomBudget, setIsEditingCustomBudget] = useState(false);
 
   const handleModelChange = (model: string) => {
     setBudgetModel(model as any);
     localStorage.setItem('finance_budget_model', model);
+    setIsEditingCustomBudget(false);
   };
 
   const handleSaveCustomBudget = () => {
@@ -42,6 +49,7 @@ export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, 
     localStorage.setItem('finance_custom_needs', customNeeds.toString());
     localStorage.setItem('finance_custom_wants', customWants.toString());
     localStorage.setItem('finance_custom_savings', customSavings.toString());
+    setIsEditingCustomBudget(false);
     alert('Modelo de orçamento personalizado salvo com sucesso!');
   };
 
@@ -192,151 +200,196 @@ export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, 
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
       
       {/* Budget Analysis Chart */}
-      <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col">
-        <div className="flex justify-between items-start mb-6">
-            <div>
-                <h3 className="text-lg font-semibold text-slate-800 dark:text-white">Modelo de Orçamento</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Planejado vs Real (Baseado na Receita)</p>
-            </div>
-            <div className="relative">
-                <select 
-                    value={budgetModel}
-                    onChange={(e) => handleModelChange(e.target.value)}
-                    className="appearance-none bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold py-1.5 pl-3 pr-8 rounded-lg outline-none cursor-pointer hover:border-indigo-300 transition-colors"
-                >
-                    <option value="50/30/20">50/30/20</option>
-                    <option value="60/20/20">60/20/20</option>
-                    <option value="70/20/10">70/20/10</option>
-                    <option value="custom">Personalizado</option>
-                </select>
-                <Settings size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-            </div>
-        </div>
-
-        {budgetModel === 'custom' && (
-            <div className="mb-6 p-4 bg-slate-50 dark:bg-slate-950 rounded-lg border border-slate-100 dark:border-slate-800">
-                <div className="flex items-center gap-2 mb-3 text-sm font-bold text-slate-700 dark:text-slate-200">
-                    <Edit3 size={14} /> Defina as porcentagens
+      {config.showBudget && (
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col">
+            <div className="flex justify-between items-start mb-6">
+                <div>
+                    <h3 className="text-lg font-semibold text-slate-800 dark:text-white">Modelo de Orçamento</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Planejado vs Real (Baseado na Receita)</p>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
-                    <div>
-                        <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Essenciais</label>
-                        <div className="relative">
-                             <input 
-                                type="number" 
-                                value={customNeeds}
-                                onChange={e => setCustomNeeds(Number(e.target.value))}
-                                className="w-full pl-2 pr-6 py-1.5 rounded border border-slate-200 dark:border-slate-700 text-sm font-bold focus:ring-1 focus:ring-primary-500 outline-none"
-                             />
-                             <span className="absolute right-2 top-1.5 text-xs text-slate-400">%</span>
-                        </div>
-                    </div>
-                    <div>
-                        <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Lazer</label>
-                        <div className="relative">
-                             <input 
-                                type="number" 
-                                value={customWants}
-                                onChange={e => setCustomWants(Number(e.target.value))}
-                                className="w-full pl-2 pr-6 py-1.5 rounded border border-slate-200 dark:border-slate-700 text-sm font-bold focus:ring-1 focus:ring-primary-500 outline-none"
-                             />
-                             <span className="absolute right-2 top-1.5 text-xs text-slate-400">%</span>
-                        </div>
-                    </div>
-                    <div>
-                        <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Investimentos</label>
-                        <div className="relative">
-                             <input 
-                                type="number" 
-                                value={customSavings}
-                                onChange={e => setCustomSavings(Number(e.target.value))}
-                                className="w-full pl-2 pr-6 py-1.5 rounded border border-slate-200 dark:border-slate-700 text-sm font-bold focus:ring-1 focus:ring-primary-500 outline-none"
-                             />
-                             <span className="absolute right-2 top-1.5 text-xs text-slate-400">%</span>
-                        </div>
-                    </div>
-                </div>
-                {totalCustom !== 100 && (
-                    <p className="text-[10px] text-red-500 mt-2 font-bold text-center">
-                        Atenção: A soma atual é {totalCustom}%. O ideal é 100%.
-                    </p>
-                )}
-                <div className="mt-4 flex justify-end">
-                    <button 
-                        onClick={handleSaveCustomBudget}
-                        disabled={totalCustom !== 100}
-                        className="bg-primary-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                <div className="relative">
+                    <select 
+                        value={budgetModel}
+                        onChange={(e) => handleModelChange(e.target.value)}
+                        className="appearance-none bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold py-1.5 pl-3 pr-8 rounded-lg outline-none cursor-pointer hover:border-indigo-300 transition-colors"
                     >
-                        Salvar Modelo
-                    </button>
+                        <option value="50/30/20">50/30/20</option>
+                        <option value="60/20/20">60/20/20</option>
+                        <option value="70/20/10">70/20/10</option>
+                        <option value="custom">Personalizado</option>
+                    </select>
+                    <Settings size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 </div>
             </div>
-        )}
 
-        <div className="flex-1 flex flex-col justify-center">
-            {monthlyIncome === 0 ? (
-                <div className="text-center p-4 bg-amber-50 rounded-xl text-amber-700 text-sm">
-                    Adicione receitas neste mês para visualizar a análise de orçamento.
+            {budgetModel === 'custom' && (
+                <div className="mb-6 p-4 bg-slate-50 dark:bg-slate-950 rounded-lg border border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-200">
+                            <Edit3 size={14} /> {isEditingCustomBudget ? 'Defina as porcentagens' : 'Porcentagens Personalizadas'}
+                        </div>
+                        {!isEditingCustomBudget && (
+                            <button 
+                                onClick={() => setIsEditingCustomBudget(true)}
+                                className="text-xs text-primary-600 hover:text-primary-700 font-bold"
+                            >
+                                Editar
+                            </button>
+                        )}
+                    </div>
+                    
+                    {isEditingCustomBudget ? (
+                        <>
+                            <div className="grid grid-cols-3 gap-3">
+                                <div>
+                                    <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Essenciais</label>
+                                    <div className="relative">
+                                         <input 
+                                            type="number" 
+                                            value={customNeeds}
+                                            onChange={e => setCustomNeeds(Number(e.target.value))}
+                                            className="w-full pl-2 pr-6 py-1.5 rounded border border-slate-200 dark:border-slate-700 text-sm font-bold focus:ring-1 focus:ring-primary-500 outline-none"
+                                         />
+                                         <span className="absolute right-2 top-1.5 text-xs text-slate-400">%</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Lazer</label>
+                                    <div className="relative">
+                                         <input 
+                                            type="number" 
+                                            value={customWants}
+                                            onChange={e => setCustomWants(Number(e.target.value))}
+                                            className="w-full pl-2 pr-6 py-1.5 rounded border border-slate-200 dark:border-slate-700 text-sm font-bold focus:ring-1 focus:ring-primary-500 outline-none"
+                                         />
+                                         <span className="absolute right-2 top-1.5 text-xs text-slate-400">%</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Investimentos</label>
+                                    <div className="relative">
+                                         <input 
+                                            type="number" 
+                                            value={customSavings}
+                                            onChange={e => setCustomSavings(Number(e.target.value))}
+                                            className="w-full pl-2 pr-6 py-1.5 rounded border border-slate-200 dark:border-slate-700 text-sm font-bold focus:ring-1 focus:ring-primary-500 outline-none"
+                                         />
+                                         <span className="absolute right-2 top-1.5 text-xs text-slate-400">%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {totalCustom !== 100 && (
+                                <p className="text-[10px] text-red-500 mt-2 font-bold text-center">
+                                    Atenção: A soma atual é {totalCustom}%. O ideal é 100%.
+                                </p>
+                            )}
+                            <div className="mt-4 flex justify-end gap-2">
+                                <button 
+                                    onClick={() => {
+                                        setCustomNeeds(Number(localStorage.getItem('finance_custom_needs')) || 50);
+                                        setCustomWants(Number(localStorage.getItem('finance_custom_wants')) || 30);
+                                        setCustomSavings(Number(localStorage.getItem('finance_custom_savings')) || 20);
+                                        setIsEditingCustomBudget(false);
+                                    }}
+                                    className="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                                <button 
+                                    onClick={handleSaveCustomBudget}
+                                    disabled={totalCustom !== 100}
+                                    className="bg-primary-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Salvar Modelo
+                                </button>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="grid grid-cols-3 gap-3">
+                            <div className="bg-white dark:bg-slate-900 p-2 rounded border border-slate-100 dark:border-slate-800 text-center">
+                                <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Essenciais</p>
+                                <p className="text-sm font-bold text-slate-800 dark:text-white">{customNeeds}%</p>
+                            </div>
+                            <div className="bg-white dark:bg-slate-900 p-2 rounded border border-slate-100 dark:border-slate-800 text-center">
+                                <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Lazer</p>
+                                <p className="text-sm font-bold text-slate-800 dark:text-white">{customWants}%</p>
+                            </div>
+                            <div className="bg-white dark:bg-slate-900 p-2 rounded border border-slate-100 dark:border-slate-800 text-center">
+                                <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Investimentos</p>
+                                <p className="text-sm font-bold text-slate-800 dark:text-white">{customSavings}%</p>
+                            </div>
+                        </div>
+                    )}
                 </div>
-            ) : (
-                <>
-                    {renderBudgetBar(
-                        "Essenciais", 
-                        needsTotal, 
-                        modelConfig.needs, 
-                        "Moradia, Alimentação, Saúde..."
-                    )}
-                    {renderBudgetBar(
-                        "Lazer", 
-                        wantsTotal, 
-                        modelConfig.wants, 
-                        "Lazer, Compras, Streaming..."
-                    )}
-                    {renderBudgetBar(
-                        "Investimentos", 
-                        savingsTotal, 
-                        modelConfig.savings, 
-                        "Investimentos, Dívidas..."
-                    )}
-                </>
             )}
-        </div>
-      </div>
+
+            <div className="flex-1 flex flex-col justify-center">
+                {monthlyIncome === 0 ? (
+                    <div className="text-center p-4 bg-amber-50 rounded-xl text-amber-700 text-sm">
+                        Adicione receitas neste mês para visualizar a análise de orçamento.
+                    </div>
+                ) : (
+                    <>
+                        {renderBudgetBar(
+                            "Essenciais", 
+                            needsTotal, 
+                            modelConfig.needs, 
+                            "Moradia, Alimentação, Saúde..."
+                        )}
+                        {renderBudgetBar(
+                            "Lazer", 
+                            wantsTotal, 
+                            modelConfig.wants, 
+                            "Lazer, Compras, Streaming..."
+                        )}
+                        {renderBudgetBar(
+                            "Investimentos", 
+                            savingsTotal, 
+                            modelConfig.savings, 
+                            "Investimentos, Dívidas..."
+                        )}
+                    </>
+                )}
+            </div>
+          </div>
+      )}
 
       {/* Expenses Breakdown Pie Chart */}
-      <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800">
-        <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Despesas por Categoria</h3>
-        <div className="h-64 w-full">
-          {expenseData.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={expenseData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {expenseData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="flex items-center justify-center h-full text-slate-400">
-              Sem despesas registradas
+      {config.showCategoryChart && (
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800">
+            <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Despesas por Categoria</h3>
+            <div className="h-64 w-full">
+              {expenseData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={expenseData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {expenseData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-slate-400">
+                  Sem despesas registradas
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      </div>
+          </div>
+      )}
 
       {/* Credit Card Expenses Pie Chart */}
-      {creditCards.length > 0 && (
+      {creditCards.length > 0 && config.showCardChart && (
         <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800">
           <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Despesas por Cartão</h3>
           <div className="h-64 w-full">
