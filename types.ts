@@ -34,6 +34,7 @@ export interface Bill {
   customAlertMessage?: string;
   paymentMethodId?: string; // 'cash' or CreditCard.id
   category?: string;
+  groupId?: string;
 }
 
 // New interface for Income Reminders
@@ -45,6 +46,7 @@ export interface IncomeReminder {
   isReceived: boolean;
   recurrence: RecurrenceType;
   category?: string;
+  groupId?: string;
 }
 
 export interface FinancialSummary {

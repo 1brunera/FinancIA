@@ -315,12 +315,41 @@ const App: React.FC = () => {
   };
 
   const handleAddBill = (newBill: Omit<Bill, 'id' | 'isPaid'>) => {
-    const bill: Bill = {
-        ...newBill,
-        id: crypto.randomUUID(),
-        isPaid: false
-    };
-    setBills(prev => [...prev, bill]);
+    const groupId = crypto.randomUUID();
+    const billsToAdd: Bill[] = [];
+    
+    if (newBill.recurrence === 'none') {
+        billsToAdd.push({
+            ...newBill,
+            id: crypto.randomUUID(),
+            isPaid: false,
+            groupId
+        });
+    } else {
+        const instances = newBill.recurrence === 'monthly' ? 60 : 10; // 5 years for monthly, 10 years for yearly
+        let currentDueDate = new Date(newBill.dueDate + 'T12:00:00'); // Use noon to avoid timezone issues
+        
+        for (let i = 0; i < instances; i++) {
+            billsToAdd.push({
+                ...newBill,
+                id: crypto.randomUUID(),
+                isPaid: false,
+                dueDate: currentDueDate.toISOString().split('T')[0],
+                groupId
+            });
+            
+            // Calculate next date
+            const nextDate = new Date(currentDueDate);
+            if (newBill.recurrence === 'monthly') {
+                nextDate.setMonth(nextDate.getMonth() + 1);
+            } else if (newBill.recurrence === 'yearly') {
+                nextDate.setFullYear(nextDate.getFullYear() + 1);
+            }
+            currentDueDate = nextDate;
+        }
+    }
+    
+    setBills(prev => [...prev, ...billsToAdd]);
   };
 
   const handleEditBill = (updatedBill: Bill) => {
@@ -347,36 +376,67 @@ const App: React.FC = () => {
         paymentMethodId: bill.paymentMethodId || 'cash',
         status: 'Pago'
     }]);
+  };
 
-    if (bill.recurrence !== 'none') {
-        const currentDueDate = new Date(bill.dueDate);
-        const nextDueDate = new Date(currentDueDate);
-        
-        if (bill.recurrence === 'monthly') {
-            nextDueDate.setMonth(nextDueDate.getMonth() + 1);
-        } else if (bill.recurrence === 'yearly') {
-            nextDueDate.setFullYear(nextDueDate.getFullYear() + 1);
+  const handleUnpayBill = (id: string) => {
+    const bill = bills.find(b => b.id === id);
+    if (!bill) return;
+
+    setBills(prev => prev.map(b => b.id === id ? { ...b, isPaid: false } : b));
+
+    // Try to remove the automatically generated transaction
+    setTransactions(prev => {
+        const matchingTxIndex = prev.findIndex(t => 
+            t.description === `Pgto: ${bill.description}` && 
+            t.amount === bill.amount && 
+            t.type === TransactionType.EXPENSE
+        );
+        if (matchingTxIndex !== -1) {
+            const newTxs = [...prev];
+            newTxs.splice(matchingTxIndex, 1);
+            return newTxs;
         }
-        
-        const newBill: Bill = {
-            ...bill,
-            id: crypto.randomUUID(),
-            isPaid: false,
-            dueDate: nextDueDate.toISOString().split('T')[0]
-        };
-        
-        setBills(prev => [...prev, newBill]);
-    }
+        return prev;
+    });
   };
 
   // Income Reminders Handlers
   const handleAddIncome = (newIncome: Omit<IncomeReminder, 'id' | 'isReceived'>) => {
-    const income: IncomeReminder = {
-        ...newIncome,
-        id: crypto.randomUUID(),
-        isReceived: false
-    };
-    setIncomeReminders(prev => [...prev, income]);
+    const groupId = crypto.randomUUID();
+    const incomesToAdd: IncomeReminder[] = [];
+    
+    if (newIncome.recurrence === 'none') {
+        incomesToAdd.push({
+            ...newIncome,
+            id: crypto.randomUUID(),
+            isReceived: false,
+            groupId
+        });
+    } else {
+        const instances = newIncome.recurrence === 'monthly' ? 60 : 10; // 5 years for monthly, 10 years for yearly
+        let currentDueDate = new Date(newIncome.dueDate + 'T12:00:00'); // Use noon to avoid timezone issues
+        
+        for (let i = 0; i < instances; i++) {
+            incomesToAdd.push({
+                ...newIncome,
+                id: crypto.randomUUID(),
+                isReceived: false,
+                dueDate: currentDueDate.toISOString().split('T')[0],
+                groupId
+            });
+            
+            // Calculate next date
+            const nextDate = new Date(currentDueDate);
+            if (newIncome.recurrence === 'monthly') {
+                nextDate.setMonth(nextDate.getMonth() + 1);
+            } else if (newIncome.recurrence === 'yearly') {
+                nextDate.setFullYear(nextDate.getFullYear() + 1);
+            }
+            currentDueDate = nextDate;
+        }
+    }
+    
+    setIncomeReminders(prev => [...prev, ...incomesToAdd]);
   };
 
   const handleEditIncome = (updatedIncome: IncomeReminder) => {
@@ -403,26 +463,28 @@ const App: React.FC = () => {
         paymentMethodId: 'cash',
         status: 'Recebido'
     }]);
+  };
 
-    if (income.recurrence !== 'none') {
-        const currentDueDate = new Date(income.dueDate);
-        const nextDueDate = new Date(currentDueDate);
-        
-        if (income.recurrence === 'monthly') {
-            nextDueDate.setMonth(nextDueDate.getMonth() + 1);
-        } else if (income.recurrence === 'yearly') {
-            nextDueDate.setFullYear(nextDueDate.getFullYear() + 1);
+  const handleUnreceiveIncome = (id: string) => {
+    const income = incomeReminders.find(i => i.id === id);
+    if (!income) return;
+
+    setIncomeReminders(prev => prev.map(i => i.id === id ? { ...i, isReceived: false } : i));
+
+    // Try to remove the automatically generated transaction
+    setTransactions(prev => {
+        const matchingTxIndex = prev.findIndex(t => 
+            t.description === `Receb.: ${income.description}` && 
+            t.amount === income.amount && 
+            t.type === TransactionType.INCOME
+        );
+        if (matchingTxIndex !== -1) {
+            const newTxs = [...prev];
+            newTxs.splice(matchingTxIndex, 1);
+            return newTxs;
         }
-        
-        const newIncome: IncomeReminder = {
-            ...income,
-            id: crypto.randomUUID(),
-            isReceived: false,
-            dueDate: nextDueDate.toISOString().split('T')[0]
-        };
-        
-        setIncomeReminders(prev => [...prev, newIncome]);
-    }
+        return prev;
+    });
   };
 
   const handleAddCreditCard = (newCard: Omit<CreditCard, 'id'>) => {
@@ -950,6 +1012,7 @@ const App: React.FC = () => {
                         onEditBill={handleEditBill}
                         onDeleteBill={handleDeleteBill}
                         onPayBill={handlePayBill}
+                        onUnpayBill={handleUnpayBill}
                         creditCards={creditCards}
                         categories={categories}
                     />
@@ -967,6 +1030,7 @@ const App: React.FC = () => {
                         onAddIncome={handleAddIncome}
                         onEditIncome={handleEditIncome}
                         onReceiveIncome={handleReceiveIncome}
+                        onUnreceiveIncome={handleUnreceiveIncome}
                         onDeleteIncome={handleDeleteIncome}
                         categories={categories}
                     />

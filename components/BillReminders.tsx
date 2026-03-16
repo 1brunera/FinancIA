@@ -8,12 +8,13 @@ interface BillRemindersProps {
   onAddBill: (bill: Omit<Bill, 'id' | 'isPaid'>) => void;
   onEditBill?: (bill: Bill) => void;
   onPayBill: (id: string) => void;
+  onUnpayBill: (id: string) => void;
   onDeleteBill: (id: string) => void;
   creditCards: CreditCardType[];
   categories: CategoryOption[];
 }
 
-export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, onEditBill, onPayBill, onDeleteBill, creditCards, categories }) => {
+export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, onEditBill, onPayBill, onUnpayBill, onDeleteBill, creditCards, categories }) => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingBillId, setEditingBillId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
@@ -498,8 +499,9 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
                                     onChange={(e) => {
                                         if (e.target.value === 'Pago' && !bill.isPaid) {
                                             onPayBill(bill.id);
+                                        } else if (e.target.value === 'Pendente' && bill.isPaid) {
+                                            onUnpayBill(bill.id);
                                         }
-                                        // Note: Currently no onUnpayBill exists, so we only handle paying
                                     }}
                                     className={`appearance-none px-2 py-1 rounded-full text-[10px] md:text-xs font-bold outline-none cursor-pointer border-2 transition-colors ${
                                         bill.isPaid 

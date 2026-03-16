@@ -8,11 +8,12 @@ interface IncomeRemindersProps {
   onAddIncome: (income: Omit<IncomeReminder, 'id' | 'isReceived'>) => void;
   onEditIncome?: (income: IncomeReminder) => void;
   onReceiveIncome: (id: string) => void;
+  onUnreceiveIncome: (id: string) => void;
   onDeleteIncome: (id: string) => void;
   categories: CategoryOption[];
 }
 
-export const IncomeReminders: React.FC<IncomeRemindersProps> = ({ incomes, onAddIncome, onEditIncome, onReceiveIncome, onDeleteIncome, categories }) => {
+export const IncomeReminders: React.FC<IncomeRemindersProps> = ({ incomes, onAddIncome, onEditIncome, onReceiveIncome, onUnreceiveIncome, onDeleteIncome, categories }) => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingIncomeId, setEditingIncomeId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
@@ -428,8 +429,9 @@ export const IncomeReminders: React.FC<IncomeRemindersProps> = ({ incomes, onAdd
                                     onChange={(e) => {
                                         if (e.target.value === 'Recebido' && !inc.isReceived) {
                                             onReceiveIncome(inc.id);
+                                        } else if (e.target.value === 'Pendente' && inc.isReceived) {
+                                            onUnreceiveIncome(inc.id);
                                         }
-                                        // Note: Currently no onUnreceiveIncome exists, so we only handle receiving
                                     }}
                                     className={`appearance-none px-2 py-1 rounded-full text-[10px] md:text-xs font-bold outline-none cursor-pointer border-2 transition-colors ${
                                         inc.isReceived 
