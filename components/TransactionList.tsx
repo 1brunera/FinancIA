@@ -10,9 +10,10 @@ interface TransactionListProps {
   categories: CategoryOption[];
   creditCards: CreditCardType[];
   showValues?: boolean;
+  hidePaymentMethodFilter?: boolean;
 }
 
-export const TransactionList: React.FC<TransactionListProps> = ({ transactions, onDelete, onEdit, onUpdateStatus, categories, creditCards, showValues = true }) => {
+export const TransactionList: React.FC<TransactionListProps> = ({ transactions, onDelete, onEdit, onUpdateStatus, categories, creditCards, showValues = true, hidePaymentMethodFilter = false }) => {
   const [filterPayment, setFilterPayment] = useState<string>('all');
 
   const getCategoryLabel = (id: string) => categories.find(c => c.id === id)?.label || id;
@@ -70,18 +71,20 @@ export const TransactionList: React.FC<TransactionListProps> = ({ transactions, 
         </div>
 
         {/* Payment Method Filter */}
-        <select
-            value={filterPayment}
-            onChange={(e) => setFilterPayment(e.target.value)}
-            className="w-full sm:w-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold py-2 px-3 rounded-xl outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
-        >
-            <option value="all">Todas as formas de pagto.</option>
-            <option value="cash">Dinheiro / Débito</option>
-            <option value="all_cards">Todos os cartões</option>
-            {creditCards.map(card => (
-                <option key={card.id} value={card.id}>Cartão: {card.name}</option>
-            ))}
-        </select>
+        {!hidePaymentMethodFilter && (
+            <select
+                value={filterPayment}
+                onChange={(e) => setFilterPayment(e.target.value)}
+                className="w-full sm:w-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold py-2 px-3 rounded-xl outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
+            >
+                <option value="all">Todas as formas de pagto.</option>
+                <option value="cash">Dinheiro / Débito</option>
+                <option value="all_cards">Todos os cartões</option>
+                {creditCards.map(card => (
+                    <option key={card.id} value={card.id}>Cartão: {card.name}</option>
+                ))}
+            </select>
+        )}
       </div>
 
       <div className="overflow-x-auto">

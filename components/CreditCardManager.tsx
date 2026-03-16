@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, CreditCard, AlertCircle, Wallet, TrendingUp, DollarSign, ArrowLeft, Calendar, Layers, Pencil, X, Check } from 'lucide-react';
-import { CreditCard as CreditCardType, Transaction, TransactionType, CategoryOption } from '../types';
+import { Plus, Trash2, CreditCard, AlertCircle, Wallet, TrendingUp, DollarSign, ArrowLeft, Calendar, Layers, Pencil, X, Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CreditCard as CreditCardType, Transaction, TransactionType, CategoryOption, Bill } from '../types';
 import { COLOR_PALETTE, DEFAULT_CATEGORIES } from '../constants';
 import { TransactionList } from './TransactionList';
 import { TransactionForm } from './TransactionForm';
@@ -9,15 +9,23 @@ interface CreditCardManagerProps {
   cards: CreditCardType[];
   transactions: Transaction[];
   categories: CategoryOption[];
+  bills: Bill[];
   onAddCard: (card: Omit<CreditCardType, 'id'>) => void;
   onUpdateCard: (card: CreditCardType) => void;
   onDeleteCard: (id: string) => void;
   onAddTransaction: (transactions: Omit<Transaction, 'id'>[]) => void;
   onEditTransaction: (transaction: Transaction) => void;
   onDeleteTransaction: (id: string) => void;
+  onAddBill: (bill: Omit<Bill, 'id' | 'isPaid'>) => void;
+  onEditBill: (bill: Bill) => void;
 }
 
-export const CreditCardManager: React.FC<CreditCardManagerProps> = ({ cards, transactions, categories, onAddCard, onUpdateCard, onDeleteCard, onAddTransaction, onEditTransaction, onDeleteTransaction }) => {
+export const CreditCardManager: React.FC<CreditCardManagerProps> = ({ 
+  cards, transactions, categories, bills, 
+  onAddCard, onUpdateCard, onDeleteCard, 
+  onAddTransaction, onEditTransaction, onDeleteTransaction,
+  onAddBill, onEditBill
+}) => {
   const [name, setName] = useState('');
   const [limit, setLimit] = useState('');
   const [closingDay, setClosingDay] = useState('');
@@ -30,6 +38,16 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({ cards, tra
   const [isEditing, setIsEditing] = useState(false);
   const [isAddingCard, setIsAddingCard] = useState(false);
   const [isAddingTransaction, setIsAddingTransaction] = useState(false);
+  
+  // Invoice state
+  const [invoiceDate, setInvoiceDate] = useState(new Date());
+  const [isEditingInvoice, setIsEditingInvoice] = useState(false);
+  const [editedInvoiceAmount, setEditedInvoiceAmount] = useState('');
+
+  React.useEffect(() => {
+    setInvoiceDate(new Date());
+    setIsEditingInvoice(false);
+  }, [selectedCard?.id]);
 
   // Edit State
   const [editName, setEditName] = useState('');
@@ -122,13 +140,91 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({ cards, tra
 
   // --- DETAIL VIEW RENDER ---
   if (selectedCard) {
+    const invoiceMonth = invoiceDate.getMonth();
+    const invoiceYear = invoiceDate.getFullYear();
+
+    const getInvoicePeriod = (card: CreditCardType, date: Date) => {
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        
+        // Fatura fecha no dia `closingDay`. 
+        // Gastos do dia `closingDay + 1` do mês anterior até o dia `closingDay` deste mês
+        // entram na fatura deste mês.
+        const endDate = new Date(year, month, card.closingDay);
+        const startDate = new Date(year, month - 1, card.closingDay + 1);
+        
+        return { startDate, endDate };
+    };
+
+    const { startDate, endDate } = getInvoicePeriod(selectedCard, invoiceDate);
+
+    const formatDateStr = (d: Date) => {
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    };
+    const startStr = formatDateStr(startDate);
+    const endStr = formatDateStr(endDate);
+    
+    const cardTransactions = transactions.filter(t => {
+        if (t.paymentMethodId !== selectedCard.id) return false;
+        return t.date >= startStr && t.date <= endStr;
+    });
+    cardTransactions.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    const calculatedInvoiceAmount = cardTransactions.reduce((acc, t) => acc + t.amount, 0);
+    
+    const dueMonth = selectedCard.dueDay < selectedCard.closingDay ? invoiceMonth + 1 : invoiceMonth;
+    const dueYear = dueMonth > 11 ? invoiceYear + 1 : invoiceYear;
+    const actualDueMonth = dueMonth % 12;
+    
+    const expectedDueDateStr = `${dueYear}-${String(actualDueMonth + 1).padStart(2, '0')}-${String(selectedCard.dueDay).padStart(2, '0')}`;
+    
+    const existingBill = bills.find(b => 
+        b.paymentMethodId === selectedCard.id && 
+        b.dueDate === expectedDueDateStr
+    );
+
+    const displayInvoiceAmount = existingBill ? existingBill.amount : calculatedInvoiceAmount;
+    
+    // For the global available limit, we should probably use the total unpaid or just the standard getMonthlyExpenses.
+    // Let's keep the available limit based on the current month expenses to not break existing logic,
+    // or we can just use the calculatedInvoiceAmount.
     const cardSpent = getMonthlyExpenses(selectedCard.id);
     const cardAvailable = selectedCard.limit - cardSpent;
-    
-    // Filter transactions for this specific card
-    const cardTransactions = transactions.filter(t => t.paymentMethodId === selectedCard.id);
-    // Sort by date desc
-    cardTransactions.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    const handlePrevMonth = () => {
+        setInvoiceDate(new Date(invoiceYear, invoiceMonth - 1, 1));
+    };
+
+    const handleNextMonth = () => {
+        setInvoiceDate(new Date(invoiceYear, invoiceMonth + 1, 1));
+    };
+
+    const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    const invoiceMonthName = `${monthNames[invoiceMonth]} ${invoiceYear}`;
+
+    const handleSaveInvoice = (e: React.FormEvent) => {
+        e.preventDefault();
+        const amount = parseFloat(editedInvoiceAmount);
+        if (isNaN(amount)) return;
+
+        if (existingBill) {
+            onEditBill({
+                ...existingBill,
+                amount
+            });
+        } else {
+            onAddBill({
+                description: `Fatura ${selectedCard.name} - ${invoiceMonthName}`,
+                amount,
+                dueDate: expectedDueDateStr,
+                notifyDaysBefore: 3,
+                recurrence: 'none',
+                paymentMethodId: selectedCard.id,
+                category: 'Cartão de Crédito'
+            });
+        }
+        setIsEditingInvoice(false);
+    };
 
     return (
         <div className="space-y-6 animate-fade-in">
@@ -271,8 +367,32 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({ cards, tra
                          </div>
                      </div>
                      <div>
-                         <p className="text-[10px] md:text-xs font-bold text-white/70 uppercase tracking-wider mb-1">Gasto (Mês)</p>
-                         <p className="text-lg md:text-xl font-bold">{formatCurrency(cardSpent)}</p>
+                         <div className="flex items-center gap-1 mb-1">
+                             <button onClick={handlePrevMonth} className="p-1 hover:bg-white/20 rounded-full transition-colors"><ChevronLeft size={14} /></button>
+                             <p className="text-[10px] md:text-xs font-bold text-white/90 uppercase tracking-wider">Fatura {invoiceMonthName}</p>
+                             <button onClick={handleNextMonth} className="p-1 hover:bg-white/20 rounded-full transition-colors"><ChevronRight size={14} /></button>
+                         </div>
+                         {isEditingInvoice ? (
+                             <form onSubmit={handleSaveInvoice} className="flex items-center gap-2">
+                                 <input 
+                                     type="number" 
+                                     step="0.01"
+                                     value={editedInvoiceAmount}
+                                     onChange={(e) => setEditedInvoiceAmount(e.target.value)}
+                                     className="w-24 px-2 py-1 text-slate-900 rounded text-sm outline-none"
+                                     autoFocus
+                                 />
+                                 <button type="submit" className="p-1 bg-green-500 rounded text-white hover:bg-green-600 transition-colors"><Check size={14} /></button>
+                                 <button type="button" onClick={() => setIsEditingInvoice(false)} className="p-1 bg-slate-500 rounded text-white hover:bg-slate-600 transition-colors"><X size={14} /></button>
+                             </form>
+                         ) : (
+                             <div className="flex items-center gap-2">
+                                 <p className="text-lg md:text-xl font-bold">{formatCurrency(displayInvoiceAmount)}</p>
+                                 <button onClick={() => { setEditedInvoiceAmount(displayInvoiceAmount.toString()); setIsEditingInvoice(true); }} className="p-1.5 hover:bg-white/20 rounded-full transition-colors" title="Editar Fatura">
+                                     <Pencil size={14} />
+                                 </button>
+                             </div>
+                         )}
                      </div>
                      <div className="col-span-2 md:col-span-1">
                          <p className="text-[10px] md:text-xs font-bold text-white/70 uppercase tracking-wider mb-1">Disponível</p>
@@ -331,14 +451,7 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({ cards, tra
                             onClose={() => setIsAddingTransaction(false)}
                             categories={categories}
                             creditCards={cards}
-                            initialData={{
-                                description: '',
-                                amount: 0,
-                                type: TransactionType.EXPENSE,
-                                category: '',
-                                date: new Date().toISOString().split('T')[0],
-                                paymentMethodId: selectedCard.id
-                            } as any}
+                            fixedPaymentMethodId={selectedCard.id}
                         />
                     </div>
                 )}
@@ -350,6 +463,7 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({ cards, tra
                         onEdit={onEditTransaction}
                         categories={categories}
                         creditCards={cards}
+                        hidePaymentMethodFilter={true}
                     />
                 ) : (
                     <div className="text-center py-10 text-slate-400">

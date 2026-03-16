@@ -981,12 +981,15 @@ const App: React.FC = () => {
                         // Passing full transactions array here
                         transactions={transactions}
                         categories={categories}
+                        bills={bills}
                         onAddCard={handleAddCreditCard}
                         onUpdateCard={handleUpdateCreditCard}
                         onDeleteCard={handleDeleteCreditCard}
                         onAddTransaction={handleAddTransactions}
                         onEditTransaction={(t) => setEditingTransaction(t)}
                         onDeleteTransaction={handleDeleteTransaction}
+                        onAddBill={handleAddBill}
+                        onEditBill={handleEditBill}
                     />
                 </div>
             );
