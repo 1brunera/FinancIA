@@ -43,10 +43,14 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({
   const [invoiceDate, setInvoiceDate] = useState(new Date());
   const [isEditingInvoice, setIsEditingInvoice] = useState(false);
   const [editedInvoiceAmount, setEditedInvoiceAmount] = useState('');
+  const [isConfirmingInvoice, setIsConfirmingInvoice] = useState(false);
+  const [pendingInvoiceAmount, setPendingInvoiceAmount] = useState<number | null>(null);
 
   React.useEffect(() => {
     setInvoiceDate(new Date());
     setIsEditingInvoice(false);
+    setIsConfirmingInvoice(false);
+    setPendingInvoiceAmount(null);
   }, [selectedCard?.id]);
 
   // Edit State
@@ -129,6 +133,37 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({
       .reduce((acc, t) => acc + t.amount, 0);
   };
 
+  // Helper to calculate invoice amount for a specific month
+  const getInvoicePeriod = (card: CreditCardType, date: Date) => {
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      
+      // Fatura fecha no dia `closingDay`. 
+      // Gastos do dia `closingDay + 1` do mês anterior até o dia `closingDay` deste mês
+      // entram na fatura deste mês.
+      const endDate = new Date(year, month, card.closingDay);
+      const startDate = new Date(year, month - 1, card.closingDay + 1);
+      
+      return { startDate, endDate };
+  };
+
+  const formatDateStr = (d: Date) => {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
+  const getCalculatedInvoiceAmount = (card: CreditCardType, date: Date) => {
+      const { startDate, endDate } = getInvoicePeriod(card, date);
+      const startStr = formatDateStr(startDate);
+      const endStr = formatDateStr(endDate);
+      
+      const cardTransactions = transactions.filter(t => {
+          if (t.paymentMethodId !== card.id) return false;
+          return t.date >= startStr && t.date <= endStr;
+      });
+      
+      return cardTransactions.reduce((acc, t) => acc + t.amount, 0);
+  };
+
   // Global Dashboard Calculations
   const totalLimit = cards.reduce((acc, card) => acc + card.limit, 0);
   const totalSpentGlobal = getMonthlyExpenses();
@@ -143,24 +178,7 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({
     const invoiceMonth = invoiceDate.getMonth();
     const invoiceYear = invoiceDate.getFullYear();
 
-    const getInvoicePeriod = (card: CreditCardType, date: Date) => {
-        const year = date.getFullYear();
-        const month = date.getMonth();
-        
-        // Fatura fecha no dia `closingDay`. 
-        // Gastos do dia `closingDay + 1` do mês anterior até o dia `closingDay` deste mês
-        // entram na fatura deste mês.
-        const endDate = new Date(year, month, card.closingDay);
-        const startDate = new Date(year, month - 1, card.closingDay + 1);
-        
-        return { startDate, endDate };
-    };
-
     const { startDate, endDate } = getInvoicePeriod(selectedCard, invoiceDate);
-
-    const formatDateStr = (d: Date) => {
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    };
     const startStr = formatDateStr(startDate);
     const endStr = formatDateStr(endDate);
     
@@ -207,15 +225,22 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({
         const amount = parseFloat(editedInvoiceAmount);
         if (isNaN(amount)) return;
 
+        setPendingInvoiceAmount(amount);
+        setIsConfirmingInvoice(true);
+    };
+
+    const confirmSaveInvoice = () => {
+        if (pendingInvoiceAmount === null) return;
+        
         if (existingBill) {
             onEditBill({
                 ...existingBill,
-                amount
+                amount: pendingInvoiceAmount
             });
         } else {
             onAddBill({
                 description: `Fatura ${selectedCard.name} - ${invoiceMonthName}`,
-                amount,
+                amount: pendingInvoiceAmount,
                 dueDate: expectedDueDateStr,
                 notifyDaysBefore: 3,
                 recurrence: 'none',
@@ -224,10 +249,52 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({
             });
         }
         setIsEditingInvoice(false);
+        setIsConfirmingInvoice(false);
+        setPendingInvoiceAmount(null);
+    };
+
+    const cancelSaveInvoice = () => {
+        setIsConfirmingInvoice(false);
+        setPendingInvoiceAmount(null);
     };
 
     return (
         <div className="space-y-6 animate-fade-in">
+            {/* Invoice Confirmation Modal */}
+            {isConfirmingInvoice && (
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+                     <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-in">
+                        <div className="px-6 py-5 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                            <h3 className="text-xl font-bold text-slate-800 dark:text-white">Confirmar Alteração</h3>
+                            <button onClick={cancelSaveInvoice} className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-full text-slate-500 dark:text-slate-400 transition-colors">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="p-6">
+                            <p className="text-slate-600 dark:text-slate-300 mb-6">
+                                O valor da fatura alterará o valor a ser pago em contas a pagar referente ao cartão selecionado, deseja prosseguir?
+                            </p>
+                            <div className="flex gap-3">
+                                <button
+                                    type="button"
+                                    onClick={cancelSaveInvoice}
+                                    className="flex-1 px-4 py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={confirmSaveInvoice}
+                                    className="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-colors"
+                                >
+                                    Confirmar
+                                </button>
+                            </div>
+                        </div>
+                     </div>
+                </div>
+            )}
+
             {/* Edit Modal */}
             {isEditing && (
                 <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -617,7 +684,7 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({
 
                 <button
                 type="submit"
-                className="w-full bg-slate-900 text-white py-2 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
+                className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors flex items-center justify-center gap-2"
                 >
                 <Plus size={16} /> Adicionar Cartão
                 </button>
@@ -636,6 +703,7 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({
                    // Calculate simplified stats for card preview
                    const cardSpent = getMonthlyExpenses(card.id);
                    const available = card.limit - cardSpent;
+                   const currentInvoiceAmount = getCalculatedInvoiceAmount(card, new Date());
 
                    return (
                    <div 
@@ -666,10 +734,14 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({
                                  </div>
                              </div>
                              <div className="text-right">
+                                 <p className="text-[10px] text-white/80 uppercase tracking-wider font-bold">Fatura Atual</p>
+                                 <p className="font-bold text-base md:text-lg drop-shadow-sm">{formatCurrency(currentInvoiceAmount)}</p>
+                             </div>
+                             <div className="text-right">
                                  <p className="text-[10px] text-white/80 uppercase tracking-wider font-bold">Melhor Dia</p>
                                  <p className="font-medium text-green-300">Dia {card.closingDay === 31 ? 1 : card.closingDay + 1}</p>
                              </div>
-                             <div className="text-right">
+                             <div className="text-right hidden md:block">
                                  <p className="text-[10px] text-white/80 uppercase tracking-wider font-bold">Fechamento</p>
                                  <p className="font-medium">Dia {card.closingDay}</p>
                              </div>

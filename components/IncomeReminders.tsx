@@ -377,7 +377,7 @@ export const IncomeReminders: React.FC<IncomeRemindersProps> = ({ incomes, onAdd
 
                     <button
                     type="submit"
-                    className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-slate-800 transition-all flex items-center justify-center gap-2 shadow-lg shadow-slate-900/20 active:scale-[0.98]"
+                    className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-4 rounded-xl font-bold hover:bg-slate-800 dark:hover:bg-slate-100 transition-all flex items-center justify-center gap-2 shadow-lg shadow-slate-900/20 dark:shadow-white/10 active:scale-[0.98]"
                     >
                         <Plus size={20} />
                         {editingIncomeId ? 'Salvar Alterações' : 'Salvar'}
