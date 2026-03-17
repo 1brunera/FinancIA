@@ -35,6 +35,7 @@ export interface Bill {
   paymentMethodId?: string; // 'cash' or CreditCard.id
   category?: string;
   groupId?: string;
+  isManualAmount?: boolean;
 }
 
 // New interface for Income Reminders

@@ -209,7 +209,7 @@ const App: React.FC = () => {
 
       // Retain existing cc bills to keep their isPaid status
       prevBills.filter(b => b.id.startsWith('cc-invoice-')).forEach(b => {
-        ccBillsMap.set(b.id, { ...b, amount: 0 }); // Reset amount to recalculate
+        ccBillsMap.set(b.id, { ...b, amount: b.isManualAmount ? b.amount : 0 }); // Reset amount to recalculate only if not manual
       });
 
       transactions.forEach(t => {
@@ -238,17 +238,19 @@ const App: React.FC = () => {
                 }
             }
             
-            const dueDate = new Date(dueYear, dueMonth, card.dueDay);
+            const expectedDueDateStr = `${dueYear}-${String(dueMonth + 1).padStart(2, '0')}-${String(card.dueDay).padStart(2, '0')}`;
             const invoiceId = `cc-invoice-${card.id}-${year}-${month}`;
             
             if (ccBillsMap.has(invoiceId)) {
-                ccBillsMap.get(invoiceId)!.amount += t.amount;
+                if (!ccBillsMap.get(invoiceId)!.isManualAmount) {
+                    ccBillsMap.get(invoiceId)!.amount += t.amount;
+                }
             } else {
                 ccBillsMap.set(invoiceId, {
                     id: invoiceId,
                     description: `Fatura ${card.name}`,
                     amount: t.amount,
-                    dueDate: dueDate.toISOString().split('T')[0],
+                    dueDate: expectedDueDateStr,
                     notifyDaysBefore: 3,
                     isPaid: false,
                     recurrence: 'none',
@@ -322,14 +324,14 @@ const App: React.FC = () => {
     setCategories(prev => prev.filter(c => c.id !== id));
   };
 
-  const handleAddBill = (newBill: Omit<Bill, 'id' | 'isPaid'>) => {
+  const handleAddBill = (newBill: Omit<Bill, 'id' | 'isPaid'> & { id?: string }) => {
     const groupId = crypto.randomUUID();
     const billsToAdd: Bill[] = [];
     
     if (newBill.recurrence === 'none') {
         billsToAdd.push({
             ...newBill,
-            id: crypto.randomUUID(),
+            id: newBill.id || crypto.randomUUID(),
             isPaid: false,
             groupId
         });

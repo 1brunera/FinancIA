@@ -240,17 +240,20 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({
         if (existingBill) {
             onEditBill({
                 ...existingBill,
-                amount: pendingInvoiceAmount
+                amount: pendingInvoiceAmount,
+                isManualAmount: true
             });
         } else {
             onAddBill({
+                id: `cc-invoice-${selectedCard.id}-${invoiceYear}-${invoiceMonth}`,
                 description: `Fatura ${selectedCard.name} - ${invoiceMonthName}`,
                 amount: pendingInvoiceAmount,
                 dueDate: expectedDueDateStr,
                 notifyDaysBefore: 3,
                 recurrence: 'none',
                 paymentMethodId: selectedCard.id,
-                category: 'Cartão de Crédito'
+                category: 'Cartão de Crédito',
+                isManualAmount: true
             });
         }
         setIsEditingInvoice(false);
