@@ -492,26 +492,26 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
                         <div className={`absolute left-0 top-0 bottom-0 w-1 ${statusColorClass}`} />
                         
                         <div className="flex items-start gap-4 pl-3">
-                            {/* Status Dropdown */}
+                            {/* Status Toggle Button */}
                             <div className="pt-1">
-                                <select
-                                    value={bill.isPaid ? 'Pago' : 'Pendente'}
-                                    onChange={(e) => {
-                                        if (e.target.value === 'Pago' && !bill.isPaid) {
-                                            onPayBill(bill.id);
-                                        } else if (e.target.value === 'Pendente' && bill.isPaid) {
-                                            onUnpayBill(bill.id);
-                                        }
-                                    }}
-                                    className={`appearance-none px-2 py-1 rounded-full text-[10px] md:text-xs font-bold outline-none cursor-pointer border-2 transition-colors ${
+                                <button
+                                    onClick={() => bill.isPaid ? onUnpayBill(bill.id) : onPayBill(bill.id)}
+                                    className={`px-3 py-1.5 rounded-full text-[10px] md:text-xs font-bold outline-none cursor-pointer border-2 transition-colors flex items-center gap-1 ${
                                         bill.isPaid 
-                                            ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800' 
-                                            : 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800'
+                                            ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/40' 
+                                            : 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800 hover:bg-yellow-100 dark:hover:bg-yellow-900/40'
                                     }`}
+                                    title={bill.isPaid ? "Clique para desfazer o pagamento (marcar como Pendente)" : "Clique para marcar como Pago"}
                                 >
-                                    <option value="Pendente">Pendente</option>
-                                    <option value="Pago">Pago</option>
-                                </select>
+                                    {bill.isPaid ? (
+                                        <>
+                                            <Check size={12} />
+                                            Pago
+                                        </>
+                                    ) : (
+                                        'Pendente'
+                                    )}
+                                </button>
                             </div>
 
                             <div className={`p-3 rounded-xl shrink-0 ${bill.isPaid ? 'bg-green-100 text-green-600' : isLate ? 'bg-red-100 text-red-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>

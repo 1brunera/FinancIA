@@ -169,8 +169,13 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({
   const totalSpentGlobal = getMonthlyExpenses();
   const totalAvailable = totalLimit - totalSpentGlobal;
 
-  // Global card transactions
-  const globalCardTransactions = transactions.filter(t => cards.some(c => c.id === t.paymentMethodId));
+  // Global card transactions (current month only)
+  const today = new Date();
+  const globalCardTransactions = transactions.filter(t => {
+      if (!cards.some(c => c.id === t.paymentMethodId)) return false;
+      const tDate = new Date(t.date + 'T12:00:00');
+      return tDate.getMonth() === today.getMonth() && tDate.getFullYear() === today.getFullYear();
+  });
   globalCardTransactions.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   // --- DETAIL VIEW RENDER ---
@@ -531,6 +536,7 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({
                         categories={categories}
                         creditCards={cards}
                         hidePaymentMethodFilter={true}
+                        showInstallmentFilter={true}
                     />
                 ) : (
                     <div className="text-center py-10 text-slate-400">
@@ -767,6 +773,7 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({
                   onEdit={onEditTransaction}
                   categories={categories}
                   creditCards={cards}
+                  showInstallmentFilter={true}
               />
           ) : (
               <div className="text-center py-10 text-slate-400">

@@ -87,7 +87,15 @@ const App: React.FC = () => {
   const [categories, setCategories] = useState<CategoryOption[]>(() => {
     try {
         const saved = localStorage.getItem('finance_categories');
-        return saved ? JSON.parse(saved) : DEFAULT_CATEGORIES;
+        if (saved) {
+            const parsedCategories = JSON.parse(saved) as CategoryOption[];
+            // Ensure all default categories exist in the saved categories
+            const missingDefaults = DEFAULT_CATEGORIES.filter(
+                defaultCat => !parsedCategories.some(savedCat => savedCat.id === defaultCat.id)
+            );
+            return [...parsedCategories, ...missingDefaults];
+        }
+        return DEFAULT_CATEGORIES;
     } catch {
         return DEFAULT_CATEGORIES;
     }
@@ -939,6 +947,7 @@ const App: React.FC = () => {
                         creditCards={creditCards}
                         config={dashboardConfig}
                         showValues={showValues}
+                        session={session}
                     />
 
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-6 border-t border-slate-200 dark:border-slate-700">

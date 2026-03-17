@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { Transaction, TransactionType, CategoryOption, CreditCard } from '../types';
-import { Settings, Info, Edit3, CreditCard as CreditCardIcon } from 'lucide-react';
+import { Settings, Info, Edit3, CreditCard as CreditCardIcon, AlertTriangle } from 'lucide-react';
+
+import { Session } from '@supabase/supabase-js';
+import { supabase } from '../services/supabase';
 
 interface FinancialChartsProps {
   transactions: Transaction[];
@@ -14,33 +17,47 @@ interface FinancialChartsProps {
     showCardChart: boolean;
   };
   showValues?: boolean;
+  session?: Session | null;
 }
 
-export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, categories, monthlyIncome, creditCards, config = { showBudget: true, showCategoryChart: true, showCardChart: true }, showValues = true }) => {
+export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, categories, monthlyIncome, creditCards, config = { showBudget: true, showCategoryChart: true, showCardChart: true }, showValues = true, session }) => {
   // Estado para o modelo de orçamento
   const [budgetModel, setBudgetModel] = useState<'50/30/20' | '60/20/20' | '70/20/10' | 'custom'>(() => {
+    const userMetadata = session?.user?.user_metadata;
+    if (userMetadata?.budgetModel) return userMetadata.budgetModel;
     return (localStorage.getItem('finance_budget_model') as any) || '50/30/20';
   });
   
   // Estado para valores personalizados (em porcentagem inteira: 50, 30, 20)
   const [customNeeds, setCustomNeeds] = useState(() => {
+    const userMetadata = session?.user?.user_metadata;
+    if (userMetadata?.customNeeds) return userMetadata.customNeeds;
     return Number(localStorage.getItem('finance_custom_needs')) || 50;
   });
   const [customWants, setCustomWants] = useState(() => {
+    const userMetadata = session?.user?.user_metadata;
+    if (userMetadata?.customWants) return userMetadata.customWants;
     return Number(localStorage.getItem('finance_custom_wants')) || 30;
   });
   const [customSavings, setCustomSavings] = useState(() => {
+    const userMetadata = session?.user?.user_metadata;
+    if (userMetadata?.customSavings) return userMetadata.customSavings;
     return Number(localStorage.getItem('finance_custom_savings')) || 20;
   });
   const [isEditingCustomBudget, setIsEditingCustomBudget] = useState(false);
 
-  const handleModelChange = (model: string) => {
+  const handleModelChange = async (model: string) => {
     setBudgetModel(model as any);
     localStorage.setItem('finance_budget_model', model);
     setIsEditingCustomBudget(false);
+    if (session) {
+      await supabase.auth.updateUser({
+        data: { budgetModel: model }
+      });
+    }
   };
 
-  const handleSaveCustomBudget = () => {
+  const handleSaveCustomBudget = async () => {
     const totalCustom = customNeeds + customWants + customSavings;
     if (totalCustom !== 100) {
       alert('A soma das porcentagens deve ser exatamente 100%.');
@@ -51,6 +68,18 @@ export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, 
     localStorage.setItem('finance_custom_wants', customWants.toString());
     localStorage.setItem('finance_custom_savings', customSavings.toString());
     setIsEditingCustomBudget(false);
+    
+    if (session) {
+      await supabase.auth.updateUser({
+        data: { 
+          budgetModel: 'custom',
+          customNeeds,
+          customWants,
+          customSavings
+        }
+      });
+    }
+    
     alert('Modelo de orçamento personalizado salvo com sucesso!');
   };
 
@@ -178,11 +207,15 @@ export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, 
              <span className="text-[10px] font-bold" style={{ color }}>
                {percentUsed.toFixed(1)}% utilizado
              </span>
-             {current > max && (
+             {current > max ? (
                <span className="text-[10px] text-red-500 font-bold flex items-center gap-1">
                  <Info size={10} /> Acima do orçamento
                </span>
-             )}
+             ) : percentUsed >= 80 ? (
+               <span className="text-[10px] text-amber-500 font-bold flex items-center gap-1">
+                 <AlertTriangle size={10} /> Próximo do limite
+               </span>
+             ) : null}
         </div>
       </div>
     );

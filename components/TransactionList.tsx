@@ -11,10 +11,12 @@ interface TransactionListProps {
   creditCards: CreditCardType[];
   showValues?: boolean;
   hidePaymentMethodFilter?: boolean;
+  showInstallmentFilter?: boolean;
 }
 
-export const TransactionList: React.FC<TransactionListProps> = ({ transactions, onDelete, onEdit, onUpdateStatus, categories, creditCards, showValues = true, hidePaymentMethodFilter = false }) => {
+export const TransactionList: React.FC<TransactionListProps> = ({ transactions, onDelete, onEdit, onUpdateStatus, categories, creditCards, showValues = true, hidePaymentMethodFilter = false, showInstallmentFilter = false }) => {
   const [filterPayment, setFilterPayment] = useState<string>('all');
+  const [filterInstallment, setFilterInstallment] = useState<string>('all');
 
   const getCategoryLabel = (id: string) => categories.find(c => c.id === id)?.label || id;
   const getCategoryColor = (id: string) => categories.find(c => c.id === id)?.color || '#94a3b8';
@@ -37,15 +39,26 @@ export const TransactionList: React.FC<TransactionListProps> = ({ transactions, 
   };
 
   const filteredTransactions = transactions.filter(t => {
-      if (filterPayment === 'all') return true;
-      const tMethod = t.paymentMethodId || 'cash';
-      
-      // Filter for 'all_cards' (Anything that is not cash)
-      if (filterPayment === 'all_cards') {
-          return tMethod !== 'cash';
+      let passPayment = true;
+      if (filterPayment !== 'all') {
+          const tMethod = t.paymentMethodId || 'cash';
+          if (filterPayment === 'all_cards') {
+              passPayment = tMethod !== 'cash';
+          } else {
+              passPayment = tMethod === filterPayment;
+          }
       }
 
-      return tMethod === filterPayment;
+      let passInstallment = true;
+      if (showInstallmentFilter && filterInstallment !== 'all') {
+          if (filterInstallment === 'one_time') {
+              passInstallment = !t.installments || t.installments.total === 1;
+          } else if (filterInstallment === 'installment') {
+              passInstallment = t.installments && t.installments.total > 1;
+          }
+      }
+
+      return passPayment && passInstallment;
   });
 
   if (transactions.length === 0) {
@@ -70,21 +83,36 @@ export const TransactionList: React.FC<TransactionListProps> = ({ transactions, 
             </span>
         </div>
 
-        {/* Payment Method Filter */}
-        {!hidePaymentMethodFilter && (
-            <select
-                value={filterPayment}
-                onChange={(e) => setFilterPayment(e.target.value)}
-                className="w-full sm:w-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold py-2 px-3 rounded-xl outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
-            >
-                <option value="all">Todas as formas de pagto.</option>
-                <option value="cash">Dinheiro / Débito</option>
-                <option value="all_cards">Todos os cartões</option>
-                {creditCards.map(card => (
-                    <option key={card.id} value={card.id}>Cartão: {card.name}</option>
-                ))}
-            </select>
-        )}
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            {/* Payment Method Filter */}
+            {!hidePaymentMethodFilter && (
+                <select
+                    value={filterPayment}
+                    onChange={(e) => setFilterPayment(e.target.value)}
+                    className="w-full sm:w-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold py-2 px-3 rounded-xl outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
+                >
+                    <option value="all">Todas as formas de pagto.</option>
+                    <option value="cash">Dinheiro / Débito</option>
+                    <option value="all_cards">Todos os cartões</option>
+                    {creditCards.map(card => (
+                        <option key={card.id} value={card.id}>Cartão: {card.name}</option>
+                    ))}
+                </select>
+            )}
+
+            {/* Installment Filter */}
+            {showInstallmentFilter && (
+                <select
+                    value={filterInstallment}
+                    onChange={(e) => setFilterInstallment(e.target.value)}
+                    className="w-full sm:w-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold py-2 px-3 rounded-xl outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
+                >
+                    <option value="all">Todos os tipos</option>
+                    <option value="one_time">À vista</option>
+                    <option value="installment">Parcelado</option>
+                </select>
+            )}
+        </div>
       </div>
 
       <div className="overflow-x-auto">

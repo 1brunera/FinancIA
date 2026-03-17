@@ -422,26 +422,26 @@ export const IncomeReminders: React.FC<IncomeRemindersProps> = ({ incomes, onAdd
                         <div className={`absolute left-0 top-0 bottom-0 w-1 ${statusColorClass}`} />
                         
                         <div className="flex items-start gap-4 pl-3">
-                            {/* Status Dropdown */}
+                            {/* Status Toggle Button */}
                             <div className="pt-1">
-                                <select
-                                    value={inc.isReceived ? 'Recebido' : 'Pendente'}
-                                    onChange={(e) => {
-                                        if (e.target.value === 'Recebido' && !inc.isReceived) {
-                                            onReceiveIncome(inc.id);
-                                        } else if (e.target.value === 'Pendente' && inc.isReceived) {
-                                            onUnreceiveIncome(inc.id);
-                                        }
-                                    }}
-                                    className={`appearance-none px-2 py-1 rounded-full text-[10px] md:text-xs font-bold outline-none cursor-pointer border-2 transition-colors ${
+                                <button
+                                    onClick={() => inc.isReceived ? onUnreceiveIncome(inc.id) : onReceiveIncome(inc.id)}
+                                    className={`px-3 py-1.5 rounded-full text-[10px] md:text-xs font-bold outline-none cursor-pointer border-2 transition-colors flex items-center gap-1 ${
                                         inc.isReceived 
-                                            ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800' 
-                                            : 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800'
+                                            ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/40' 
+                                            : 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800 hover:bg-yellow-100 dark:hover:bg-yellow-900/40'
                                     }`}
+                                    title={inc.isReceived ? "Clique para desfazer o recebimento (marcar como Pendente)" : "Clique para marcar como Recebido"}
                                 >
-                                    <option value="Pendente">Pendente</option>
-                                    <option value="Recebido">Recebido</option>
-                                </select>
+                                    {inc.isReceived ? (
+                                        <>
+                                            <Check size={12} />
+                                            Recebido
+                                        </>
+                                    ) : (
+                                        'Pendente'
+                                    )}
+                                </button>
                             </div>
 
                             <div className={`p-3 rounded-xl shrink-0 ${inc.isReceived ? 'bg-green-100 text-green-600' : isLate ? 'bg-amber-100 text-amber-600' : 'bg-green-50 text-green-600'}`}>
