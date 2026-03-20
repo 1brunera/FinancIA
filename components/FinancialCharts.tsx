@@ -365,29 +365,6 @@ export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, 
                     </div>
                 ) : (
                     <>
-                        <div className="h-48 mb-6">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart
-                                    data={[
-                                        { name: 'Essenciais', Planejado: monthlyIncome * modelConfig.needs, Gasto: needsTotal },
-                                        { name: 'Lazer', Planejado: monthlyIncome * modelConfig.wants, Gasto: wantsTotal },
-                                        { name: 'Investimentos', Planejado: monthlyIncome * modelConfig.savings, Gasto: savingsTotal }
-                                    ]}
-                                    margin={{ top: 5, right: 0, left: -20, bottom: 0 }}
-                                >
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} tickFormatter={(value) => `R$ ${value}`} />
-                                    <Tooltip 
-                                        formatter={(value: number) => formatCurrency(value)}
-                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                    />
-                                    <Legend wrapperStyle={{ fontSize: '12px' }} />
-                                    <Bar dataKey="Planejado" fill="#cbd5e1" radius={[4, 4, 0, 0]} />
-                                    <Bar dataKey="Gasto" fill="#6366f1" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
                         {renderBudgetBar(
                             "Essenciais", 
                             needsTotal, 
