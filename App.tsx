@@ -320,6 +320,10 @@ const App: React.FC = () => {
     setCategories(prev => [...prev, category]);
   };
 
+  const handleEditCategory = (updatedCategory: CategoryOption) => {
+    setCategories(prev => prev.map(c => c.id === updatedCategory.id ? updatedCategory : c));
+  };
+
   const handleDeleteCategory = (id: string) => {
     setCategories(prev => prev.filter(c => c.id !== id));
   };
@@ -1074,6 +1078,7 @@ const App: React.FC = () => {
                     <CategoryManager 
                         categories={categories}
                         onAddCategory={handleAddCategory}
+                        onEditCategory={handleEditCategory}
                         onDeleteCategory={handleDeleteCategory}
                     />
                 </div>

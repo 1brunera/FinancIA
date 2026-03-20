@@ -166,8 +166,8 @@ export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, 
     return '#ef4444'; // Red (> 100%)
   };
 
-  const renderBudgetBar = (label: string, current: number, percentageTarget: number, description: string) => {
-    const max = monthlyIncome * percentageTarget;
+  const renderBudgetBar = (label: string, current: number, target: number, description: string, isPercentage: boolean = true) => {
+    const max = isPercentage ? monthlyIncome * target : target;
     const percentUsed = max > 0 ? (current / max) * 100 : 0;
     const color = getProgressColor(current, max);
 
@@ -176,7 +176,7 @@ export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, 
         <div className="flex justify-between items-end mb-2">
           <div>
             <h4 className="font-bold text-slate-700 dark:text-slate-200 text-sm flex items-center gap-2">
-              {label} <span className="text-xs text-slate-400 font-normal">({(percentageTarget * 100).toFixed(0)}%)</span>
+              {label} {isPercentage && <span className="text-xs text-slate-400 font-normal">({(target * 100).toFixed(0)}%)</span>}
             </h4>
             <p className="text-xs text-slate-500 dark:text-slate-400">{description}</p>
           </div>
@@ -365,6 +365,29 @@ export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, 
                     </div>
                 ) : (
                     <>
+                        <div className="h-48 mb-6">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart
+                                    data={[
+                                        { name: 'Essenciais', Planejado: monthlyIncome * modelConfig.needs, Gasto: needsTotal },
+                                        { name: 'Lazer', Planejado: monthlyIncome * modelConfig.wants, Gasto: wantsTotal },
+                                        { name: 'Investimentos', Planejado: monthlyIncome * modelConfig.savings, Gasto: savingsTotal }
+                                    ]}
+                                    margin={{ top: 5, right: 0, left: -20, bottom: 0 }}
+                                >
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} tickFormatter={(value) => `R$ ${value}`} />
+                                    <Tooltip 
+                                        formatter={(value: number) => formatCurrency(value)}
+                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                    />
+                                    <Legend wrapperStyle={{ fontSize: '12px' }} />
+                                    <Bar dataKey="Planejado" fill="#cbd5e1" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="Gasto" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
                         {renderBudgetBar(
                             "Essenciais", 
                             needsTotal, 
@@ -385,6 +408,35 @@ export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, 
                         )}
                     </>
                 )}
+            </div>
+          </div>
+      )}
+
+      {/* Category Budgets */}
+      {config.showBudget && categories.some(c => c.budget && c.budget > 0) && (
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col">
+            <div className="flex justify-between items-start mb-6">
+                <div>
+                    <h3 className="text-lg font-semibold text-slate-800 dark:text-white">Orçamentos por Categoria</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Progresso dos gastos em relação ao limite definido</p>
+                </div>
+            </div>
+
+            <div className="flex-1 flex flex-col justify-center">
+                {categories.filter(c => c.budget && c.budget > 0).map(cat => {
+                    const spent = expenseData.find(e => e.categoryId === cat.id)?.value || 0;
+                    return (
+                        <div key={cat.id}>
+                            {renderBudgetBar(
+                                cat.label,
+                                spent,
+                                cat.budget!,
+                                cat.budgetGroup === 'needs' ? 'Essenciais' : cat.budgetGroup === 'wants' ? 'Lazer' : cat.budgetGroup === 'savings' ? 'Investimentos' : 'Geral',
+                                false
+                            )}
+                        </div>
+                    );
+                })}
             </div>
           </div>
       )}

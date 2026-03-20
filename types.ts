@@ -64,6 +64,7 @@ export interface CategoryOption {
   color: string;
   isCustom?: boolean;
   budgetGroup?: BudgetGroup; 
+  budget?: number;
 }
 
 export interface CreditCard {

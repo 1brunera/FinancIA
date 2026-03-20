@@ -1,27 +1,64 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, Tag } from 'lucide-react';
+import { Plus, Trash2, Tag, Edit2, X } from 'lucide-react';
 import { CategoryOption, BudgetGroup } from '../types';
 import { COLOR_PALETTE } from '../constants';
 
 interface CategoryManagerProps {
   categories: CategoryOption[];
   onAddCategory: (category: CategoryOption) => void;
+  onEditCategory: (category: CategoryOption) => void;
   onDeleteCategory: (id: string) => void;
 }
 
 export const CategoryManager: React.FC<CategoryManagerProps> = ({ 
   categories, 
   onAddCategory, 
+  onEditCategory,
   onDeleteCategory, 
 }) => {
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [newLabel, setNewLabel] = useState('');
   const [selectedColor, setSelectedColor] = useState(COLOR_PALETTE[0]);
   const [budgetGroup, setBudgetGroup] = useState<BudgetGroup>('wants');
+  const [budget, setBudget] = useState<string>('');
+
+  const resetForm = () => {
+    setEditingId(null);
+    setNewLabel('');
+    setSelectedColor(COLOR_PALETTE[0]);
+    setBudgetGroup('wants');
+    setBudget('');
+  };
+
+  const handleEditClick = (cat: CategoryOption) => {
+    setEditingId(cat.id);
+    setNewLabel(cat.label);
+    setSelectedColor(cat.color);
+    setBudgetGroup(cat.budgetGroup || 'wants');
+    setBudget(cat.budget ? cat.budget.toString() : '');
+  };
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newLabel) return;
     
+    const parsedBudget = budget ? parseFloat(budget) : undefined;
+    
+    if (editingId) {
+      const existingCat = categories.find(c => c.id === editingId);
+      if (existingCat) {
+        onEditCategory({
+          ...existingCat,
+          label: newLabel,
+          color: selectedColor,
+          budgetGroup: budgetGroup,
+          budget: parsedBudget
+        });
+      }
+      resetForm();
+      return;
+    }
+
     const id = newLabel.toLowerCase().trim().replace(/\s+/g, '-');
     
     if (categories.some(c => c.id === id)) {
@@ -34,9 +71,10 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
       label: newLabel,
       color: selectedColor,
       isCustom: true,
-      budgetGroup: budgetGroup
+      budgetGroup: budgetGroup,
+      budget: parsedBudget
     });
-    setNewLabel('');
+    resetForm();
   };
 
   return (
@@ -56,8 +94,15 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
         {/* Create Form */}
         <div className="lg:col-span-1">
             <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden sticky top-24">
-                <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50">
-                    <h3 className="font-semibold text-slate-800 dark:text-white">Nova categoria</h3>
+                <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 flex justify-between items-center">
+                    <h3 className="font-semibold text-slate-800 dark:text-white">
+                        {editingId ? 'Editar categoria' : 'Nova categoria'}
+                    </h3>
+                    {editingId && (
+                        <button onClick={resetForm} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                            <X size={16} />
+                        </button>
+                    )}
                 </div>
                 <form onSubmit={handleAdd} className="p-6 space-y-4">
                     <div>
@@ -86,6 +131,21 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
                     </div>
 
                     <div>
+                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Orçamento Mensal (Opcional)</label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">R$</span>
+                            <input
+                                type="number"
+                                step="0.01"
+                                value={budget}
+                                onChange={(e) => setBudget(e.target.value)}
+                                placeholder="0,00"
+                                className="w-full pl-9 pr-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none text-sm"
+                            />
+                        </div>
+                    </div>
+
+                    <div>
                         <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Cor da etiqueta</label>
                         <div className="flex flex-wrap gap-3">
                             {COLOR_PALETTE.map(color => (
@@ -103,7 +163,8 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
                         type="submit"
                         className="w-full bg-slate-900 text-white py-3 rounded-xl text-sm font-bold hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-slate-900/10"
                     >
-                        <Plus size={18} /> Criar categoria
+                        {editingId ? <Edit2 size={18} /> : <Plus size={18} />}
+                        {editingId ? 'Salvar alterações' : 'Criar categoria'}
                     </button>
                 </form>
             </div>
@@ -123,23 +184,39 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
                                     </div>
                                     <span className="text-slate-700 dark:text-slate-200 font-semibold text-sm">{cat.label}</span>
                                 </div>
-                                <span className="text-[10px] text-slate-400 ml-12 uppercase tracking-wide">
-                                    {cat.budgetGroup === 'needs' ? 'Essenciais' : 
-                                     cat.budgetGroup === 'wants' ? 'Lazer' : 
-                                     cat.budgetGroup === 'savings' ? 'Investimentos' : 'Geral'}
-                                </span>
+                                <div className="flex items-center gap-2 ml-12">
+                                    <span className="text-[10px] text-slate-400 uppercase tracking-wide">
+                                        {cat.budgetGroup === 'needs' ? 'Essenciais' : 
+                                         cat.budgetGroup === 'wants' ? 'Lazer' : 
+                                         cat.budgetGroup === 'savings' ? 'Investimentos' : 'Geral'}
+                                    </span>
+                                    {cat.budget && (
+                                        <span className="text-[10px] font-medium text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">
+                                            R$ {cat.budget.toFixed(2)}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
-                            {cat.isCustom ? (
+                            <div className="flex items-center gap-1">
                                 <button 
-                                    onClick={() => onDeleteCategory(cat.id)}
-                                    className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                    title="Excluir"
+                                    onClick={() => handleEditClick(cat)}
+                                    className="p-2 text-slate-300 hover:text-primary-500 hover:bg-primary-50 rounded-lg transition-colors"
+                                    title="Editar"
                                 >
-                                    <Trash2 size={18} />
+                                    <Edit2 size={18} />
                                 </button>
-                            ) : (
-                                <span className="text-xs text-slate-400 italic px-2">Padrão</span>
-                            )}
+                                {cat.isCustom ? (
+                                    <button 
+                                        onClick={() => onDeleteCategory(cat.id)}
+                                        className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                        title="Excluir"
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
+                                ) : (
+                                    <span className="text-xs text-slate-400 italic px-2">Padrão</span>
+                                )}
+                            </div>
                         </div>
                     ))}
                 </div>
