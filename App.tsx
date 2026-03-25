@@ -14,6 +14,7 @@ import { InvestmentsDashboard } from './components/InvestmentsDashboard';
 import { Sidebar } from './components/Sidebar';
 import { Settings } from './components/Settings';
 import { supabase } from './services/supabase';
+import { db } from './services/db';
 import { AuthScreen } from './components/AuthScreen';
 import { Session } from '@supabase/supabase-js';
 
@@ -188,6 +189,39 @@ const App: React.FC = () => {
     localStorage.setItem('finance_theme', theme);
   }, [theme]);
 
+
+  useEffect(() => {
+    if (session) {
+      const loadData = async () => {
+        try {
+          const txs = await db.getTransactions();
+          if (txs.length > 0) setTransactions(txs);
+          
+          const cats = await db.getCategories();
+          if (cats.length > 0) setCategories(cats);
+          
+          const cards = await db.getCreditCards();
+          if (cards.length > 0) setCreditCards(cards);
+          
+          const fetchedBills = await db.getBills();
+          if (fetchedBills.length > 0) setBills(fetchedBills);
+          
+          const fetchedIncomes = await db.getIncomeReminders();
+          if (fetchedIncomes.length > 0) setIncomeReminders(fetchedIncomes);
+          
+          const fetchedInvestments = await db.getInvestments();
+          if (fetchedInvestments.length > 0) setInvestments(fetchedInvestments);
+          
+          const fetchedGoals = await db.getInvestmentGoals();
+          if (fetchedGoals.length > 0) setInvestmentGoals(fetchedGoals);
+        } catch (e) {
+          console.error("Error loading data from Supabase", e);
+        }
+      };
+      loadData();
+    }
+  }, [session]);
+
   // --- Persistence ---
   useEffect(() => {
     localStorage.setItem('finance_transactions', JSON.stringify(transactions));
@@ -296,39 +330,50 @@ const App: React.FC = () => {
       setIsMobileSidebarOpen(false); // Close sidebar on mobile nav
   };
 
-  const handleAddTransactions = (newTransactionsData: Omit<Transaction, 'id'>[]) => {
+  const handleAddTransactions = async (newTransactionsData: Omit<Transaction, 'id'>[]) => {
     const newTransactions = newTransactionsData.map(t => ({
         ...t,
         id: crypto.randomUUID()
     }));
+    if (session) await db.addTransactions(newTransactions, session.user.id);
     setTransactions(prev => [...newTransactions, ...prev]);
   };
 
-  const handleEditTransaction = (updatedTransaction: Transaction) => {
+  const handleEditTransaction = async (updatedTransaction: Transaction) => {
+    if (session) await db.updateTransaction(updatedTransaction, session.user.id);
     setTransactions(prev => prev.map(t => t.id === updatedTransaction.id ? updatedTransaction : t));
   };
 
-  const handleDeleteTransaction = (id: string) => {
+  const handleDeleteTransaction = async (id: string) => {
+    if (session) await db.deleteTransaction(id);
     setTransactions(prev => prev.filter(t => t.id !== id));
   };
 
-  const handleUpdateTransactionStatus = (id: string, newStatus: TransactionStatus) => {
-    setTransactions(prev => prev.map(t => t.id === id ? { ...t, status: newStatus } : t));
+  const handleUpdateTransactionStatus = async (id: string, newStatus: TransactionStatus) => {
+    setTransactions(prev => {
+      const updated = prev.map(t => t.id === id ? { ...t, status: newStatus } : t);
+      const tx = updated.find(t => t.id === id);
+      if (tx && session) db.updateTransaction(tx, session.user.id);
+      return updated;
+    });
   };
 
-  const handleAddCategory = (category: CategoryOption) => {
+  const handleAddCategory = async (category: CategoryOption) => {
+    if (session) await db.addCategory(category, session.user.id);
     setCategories(prev => [...prev, category]);
   };
 
-  const handleEditCategory = (updatedCategory: CategoryOption) => {
+  const handleEditCategory = async (updatedCategory: CategoryOption) => {
+    if (session) await db.updateCategory(updatedCategory, session.user.id);
     setCategories(prev => prev.map(c => c.id === updatedCategory.id ? updatedCategory : c));
   };
 
-  const handleDeleteCategory = (id: string) => {
+  const handleDeleteCategory = async (id: string) => {
+    if (session) await db.deleteCategory(id);
     setCategories(prev => prev.filter(c => c.id !== id));
   };
 
-  const handleAddBill = (newBill: Omit<Bill, 'id' | 'isPaid'> & { id?: string }) => {
+  const handleAddBill = async (newBill: Omit<Bill, 'id' | 'isPaid'> & { id?: string }) => {
     const groupId = crypto.randomUUID();
     const billsToAdd: Bill[] = [];
     
@@ -363,21 +408,25 @@ const App: React.FC = () => {
         }
     }
     
+    if (session) await db.addBills(billsToAdd, session.user.id);
     setBills(prev => [...prev, ...billsToAdd]);
   };
 
-  const handleEditBill = (updatedBill: Bill) => {
+  const handleEditBill = async (updatedBill: Bill) => {
+    if (session) await db.updateBill(updatedBill, session.user.id);
     setBills(prev => prev.map(b => b.id === updatedBill.id ? updatedBill : b));
   };
 
-  const handleDeleteBill = (id: string) => {
+  const handleDeleteBill = async (id: string) => {
+    if (session) await db.deleteBill(id);
     setBills(prev => prev.filter(b => b.id !== id));
   };
 
-  const handlePayBill = (id: string) => {
+  const handlePayBill = async (id: string) => {
     const bill = bills.find(b => b.id === id);
     if (!bill) return;
 
+    if (session) await db.updateBill({ ...bill, isPaid: true }, session.user.id);
     setBills(prev => prev.map(b => b.id === id ? { ...b, isPaid: true } : b));
 
     // Add a single transaction for bill payment
@@ -392,10 +441,11 @@ const App: React.FC = () => {
     }]);
   };
 
-  const handleUnpayBill = (id: string) => {
+  const handleUnpayBill = async (id: string) => {
     const bill = bills.find(b => b.id === id);
     if (!bill) return;
 
+    if (session) await db.updateBill({ ...bill, isPaid: false }, session.user.id);
     setBills(prev => prev.map(b => b.id === id ? { ...b, isPaid: false } : b));
 
     // Try to remove the automatically generated transaction
@@ -415,7 +465,7 @@ const App: React.FC = () => {
   };
 
   // Income Reminders Handlers
-  const handleAddIncome = (newIncome: Omit<IncomeReminder, 'id' | 'isReceived'>) => {
+  const handleAddIncome = async (newIncome: Omit<IncomeReminder, 'id' | 'isReceived'>) => {
     const groupId = crypto.randomUUID();
     const incomesToAdd: IncomeReminder[] = [];
     
@@ -450,21 +500,25 @@ const App: React.FC = () => {
         }
     }
     
+    if (session) await db.addIncomeReminders(incomesToAdd, session.user.id);
     setIncomeReminders(prev => [...prev, ...incomesToAdd]);
   };
 
-  const handleEditIncome = (updatedIncome: IncomeReminder) => {
+  const handleEditIncome = async (updatedIncome: IncomeReminder) => {
+    if (session) await db.updateIncomeReminder(updatedIncome, session.user.id);
     setIncomeReminders(prev => prev.map(i => i.id === updatedIncome.id ? updatedIncome : i));
   };
 
-  const handleDeleteIncome = (id: string) => {
+  const handleDeleteIncome = async (id: string) => {
+    if (session) await db.deleteIncomeReminder(id);
     setIncomeReminders(prev => prev.filter(i => i.id !== id));
   };
 
-  const handleReceiveIncome = (id: string) => {
+  const handleReceiveIncome = async (id: string) => {
     const income = incomeReminders.find(i => i.id === id);
     if (!income) return;
 
+    if (session) await db.updateIncomeReminder({ ...income, isReceived: true }, session.user.id);
     setIncomeReminders(prev => prev.map(i => i.id === id ? { ...i, isReceived: true } : i));
 
     // Add transaction
@@ -479,10 +533,11 @@ const App: React.FC = () => {
     }]);
   };
 
-  const handleUnreceiveIncome = (id: string) => {
+  const handleUnreceiveIncome = async (id: string) => {
     const income = incomeReminders.find(i => i.id === id);
     if (!income) return;
 
+    if (session) await db.updateIncomeReminder({ ...income, isReceived: false }, session.user.id);
     setIncomeReminders(prev => prev.map(i => i.id === id ? { ...i, isReceived: false } : i));
 
     // Try to remove the automatically generated transaction
@@ -506,19 +561,33 @@ const App: React.FC = () => {
     setCreditCards(prev => [...prev, card]);
   };
 
-  const handleUpdateCreditCard = (updatedCard: CreditCard) => {
+  const handleUpdateCreditCard = async (updatedCard: CreditCard) => {
+    if (session) await db.updateCreditCard(updatedCard, session.user.id);
     setCreditCards(prev => prev.map(c => c.id === updatedCard.id ? updatedCard : c));
   };
 
-  const handleDeleteCreditCard = (id: string) => {
+  const handleDeleteCreditCard = async (id: string) => {
+    if (session) await db.deleteCreditCard(id);
     setCreditCards(prev => prev.filter(c => c.id !== id));
   };
 
   // Investment Handlers (Mocked for now as UI only requested display)
-  const handleAddInvestment = (inv: Investment) => setInvestments(prev => [...prev, inv]);
-  const handleDeleteInvestment = (id: string) => setInvestments(prev => prev.filter(i => i.id !== id));
-  const handleAddGoal = (goal: InvestmentGoal) => setInvestmentGoals(prev => [...prev, goal]);
-  const handleDeleteGoal = (id: string) => setInvestmentGoals(prev => prev.filter(g => g.id !== id));
+  const handleAddInvestment = async (inv: Investment) => {
+    if (session) await db.addInvestment(inv, session.user.id);
+    setInvestments(prev => [...prev, inv]);
+  };
+  const handleDeleteInvestment = async (id: string) => {
+    if (session) await db.deleteInvestment(id);
+    setInvestments(prev => prev.filter(i => i.id !== id));
+  };
+  const handleAddGoal = async (goal: InvestmentGoal) => {
+    if (session) await db.addInvestmentGoal(goal, session.user.id);
+    setInvestmentGoals(prev => [...prev, goal]);
+  };
+  const handleDeleteGoal = async (id: string) => {
+    if (session) await db.deleteInvestmentGoal(id);
+    setInvestmentGoals(prev => prev.filter(g => g.id !== id));
+  };
 
   // --- Settings Handlers ---
   const handleClearData = () => {

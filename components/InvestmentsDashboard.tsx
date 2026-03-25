@@ -53,6 +53,8 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
   const [goalTarget, setGoalTarget] = useState('');
   const [goalCurrent, setGoalCurrent] = useState('');
   const [goalDeadline, setGoalDeadline] = useState('');
+  const [goalRedemptionDate, setGoalRedemptionDate] = useState('');
+  const [goalPeriod, setGoalPeriod] = useState('imediato');
 
   const handleInvSubmit = (e: React.FormEvent) => {
       e.preventDefault();
@@ -82,13 +84,17 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
           name: goalName,
           targetAmount: parseFloat(goalTarget),
           currentAmount: parseFloat(goalCurrent) || 0,
-          deadline: goalDeadline
+          deadline: goalDeadline,
+          redemptionDate: goalRedemptionDate || undefined,
+          period: goalPeriod
       });
 
       setGoalName('');
       setGoalTarget('');
       setGoalCurrent('');
       setGoalDeadline('');
+      setGoalRedemptionDate('');
+      setGoalPeriod('imediato');
       setIsGoalModalOpen(false);
   };
 
@@ -297,22 +303,55 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
                                 className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
                              />
                         </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Data de Resgate</label>
+                                <input 
+                                    type="date"
+                                    value={goalRedemptionDate}
+                                    onChange={e => setGoalRedemptionDate(e.target.value)}
+                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Período</label>
+                                <select
+                                    value={goalPeriod}
+                                    onChange={e => setGoalPeriod(e.target.value)}
+                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
+                                >
+                                    <option value="imediato">Imediato</option>
+                                    <option value="3_meses">3 Meses</option>
+                                    <option value="6_meses">6 Meses</option>
+                                    <option value="1_ano">1 Ano</option>
+                                    <option value="personalizado">Personalizado</option>
+                                </select>
+                            </div>
+                        </div>
                         <button type="submit" className="w-full bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-slate-800 transition-colors">
-                            Criar Meta
+                            Criar Porquinho / Meta
                         </button>
                     </form>
                  </div>
              </div>
         )}
 
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Meus Investimentos</h2>
-            <button 
-                onClick={() => setIsInvModalOpen(true)}
-                className="bg-slate-900 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-slate-800 transition-all flex items-center gap-2"
-            >
-                <Plus size={18} /> Adicionar Investimento
-            </button>
+            <div className="flex items-center gap-3">
+                <button 
+                    onClick={() => setIsGoalModalOpen(true)}
+                    className="bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 px-4 py-2 rounded-xl text-sm font-bold hover:bg-primary-200 dark:hover:bg-primary-900/50 transition-all flex items-center gap-2"
+                >
+                    <Target size={18} /> Criar Porquinho
+                </button>
+                <button 
+                    onClick={() => setIsInvModalOpen(true)}
+                    className="bg-slate-900 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-slate-800 transition-all flex items-center gap-2"
+                >
+                    <Plus size={18} /> Adicionar Investimento
+                </button>
+            </div>
         </div>
         
         {/* Top Summary */}
@@ -448,7 +487,7 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
             <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
                 <div className="flex justify-between items-center mb-6">
                      <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                        <Target size={20} className="text-red-500" /> Metas e Sonhos
+                        <Target size={20} className="text-red-500" /> Porquinhos / Metas
                     </h3>
                     <button onClick={() => setIsGoalModalOpen(true)} className="p-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-lg text-slate-600 dark:text-slate-300 transition-colors">
                         <Plus size={16} />
@@ -466,9 +505,15 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
                                 <div className="flex justify-between items-end mb-1">
                                     <div>
                                         <p className="font-bold text-slate-700 dark:text-slate-200 text-sm">{goal.name}</p>
-                                        <div className="flex items-center gap-2 text-[10px] text-slate-400">
-                                            <span>Prazo: {new Date(goal.deadline).toLocaleDateString()}</span>
-                                            <span className="flex items-center gap-0.5 bg-slate-50 dark:bg-slate-950 px-1 rounded text-slate-500 dark:text-slate-400">
+                                        <div className="flex flex-wrap items-center gap-2 text-[10px] text-slate-400 mt-1">
+                                            <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">Prazo: {new Date(goal.deadline).toLocaleDateString()}</span>
+                                            {goal.redemptionDate && (
+                                                <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">Resgate: {new Date(goal.redemptionDate).toLocaleDateString()}</span>
+                                            )}
+                                            {goal.period && (
+                                                <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded capitalize">Período: {goal.period.replace('_', ' ')}</span>
+                                            )}
+                                            <span className="flex items-center gap-0.5 bg-slate-50 dark:bg-slate-950 px-1.5 py-0.5 rounded text-slate-500 dark:text-slate-400">
                                                 <Clock size={8} /> {getRemainingTime(goal.deadline)}
                                             </span>
                                         </div>

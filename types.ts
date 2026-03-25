@@ -95,4 +95,6 @@ export interface InvestmentGoal {
   currentAmount: number;
   deadline: string; // ISO Date
   icon?: string; // e.g., 'plane', 'home'
+  redemptionDate?: string;
+  period?: string; // 'imediato', '3_meses', '6_meses', '1_ano', 'personalizado'
 }
