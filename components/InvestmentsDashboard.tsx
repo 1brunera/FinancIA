@@ -45,8 +45,10 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
   // --- Investment Form State ---
   const [invName, setInvName] = useState('');
   const [invAmount, setInvAmount] = useState('');
-  const [invType, setInvType] = useState<InvestmentType>('fixed');
+  const [invType, setInvType] = useState<InvestmentType>('renda_fixa');
   const [isLiquidity, setIsLiquidity] = useState(false);
+  const [invInstitution, setInvInstitution] = useState('');
+  const [invProfitability, setInvProfitability] = useState('');
 
   // --- Goal Form State ---
   const [goalName, setGoalName] = useState('');
@@ -55,6 +57,9 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
   const [goalDeadline, setGoalDeadline] = useState('');
   const [goalRedemptionDate, setGoalRedemptionDate] = useState('');
   const [goalPeriod, setGoalPeriod] = useState('imediato');
+  const [goalInstitution, setGoalInstitution] = useState('');
+  const [goalProfitability, setGoalProfitability] = useState('');
+  const [goalType, setGoalType] = useState<InvestmentType>('renda_fixa');
 
   const handleInvSubmit = (e: React.FormEvent) => {
       e.preventDefault();
@@ -65,13 +70,17 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
           name: invName,
           amount: parseFloat(invAmount),
           type: invType,
-          isLiquidity: isLiquidity
+          isLiquidity: isLiquidity,
+          institution: invInstitution || undefined,
+          profitability: invProfitability || undefined
       });
 
       setInvName('');
       setInvAmount('');
-      setInvType('fixed');
+      setInvType('renda_fixa');
       setIsLiquidity(false);
+      setInvInstitution('');
+      setInvProfitability('');
       setIsInvModalOpen(false);
   };
 
@@ -86,7 +95,10 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
           currentAmount: parseFloat(goalCurrent) || 0,
           deadline: goalDeadline,
           redemptionDate: goalRedemptionDate || undefined,
-          period: goalPeriod
+          period: goalPeriod,
+          institution: goalInstitution || undefined,
+          profitability: goalProfitability || undefined,
+          type: goalType
       });
 
       setGoalName('');
@@ -95,6 +107,9 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
       setGoalDeadline('');
       setGoalRedemptionDate('');
       setGoalPeriod('imediato');
+      setGoalInstitution('');
+      setGoalProfitability('');
+      setGoalType('renda_fixa');
       setIsGoalModalOpen(false);
   };
 
@@ -128,8 +143,8 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
   // --- Logic: Asset Allocation ---
   const allocationData = useMemo(() => {
       const groups = investments.reduce((acc, inv) => {
-          const label = inv.type === 'fixed' ? 'Renda Fixa' : 
-                        inv.type === 'stock' ? 'Ações' : 
+          const label = (inv.type === 'fixed' || inv.type === 'renda_fixa' || inv.type === 'cdb' || inv.type === 'tesouro' || inv.type === 'lci_lca' || inv.type === 'poupanca') ? 'Renda Fixa' : 
+                        (inv.type === 'stock' || inv.type === 'renda_variavel') ? 'Renda Variável' : 
                         inv.type === 'fii' ? 'FIIs' : 
                         inv.type === 'crypto' ? 'Cripto' : 
                         inv.type === 'foreign' ? 'Exterior' : 'Fundos';
@@ -137,13 +152,25 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
           return acc;
       }, {} as Record<string, number>);
 
+      // Add goals to allocation (usually fixed income)
+      goals.forEach(goal => {
+          if (goal.currentAmount > 0) {
+              const label = (goal.type === 'fixed' || goal.type === 'renda_fixa' || goal.type === 'cdb' || goal.type === 'tesouro' || goal.type === 'lci_lca' || goal.type === 'poupanca' || !goal.type) ? 'Renda Fixa' : 
+                            (goal.type === 'stock' || goal.type === 'renda_variavel') ? 'Renda Variável' : 
+                            goal.type === 'fii' ? 'FIIs' : 
+                            goal.type === 'crypto' ? 'Cripto' : 
+                            goal.type === 'foreign' ? 'Exterior' : 'Fundos';
+              groups[label] = (groups[label] || 0) + goal.currentAmount;
+          }
+      });
+
       return Object.entries(groups).map(([name, value]) => ({ name, value }));
-  }, [investments]);
+  }, [investments, goals]);
 
   const COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#64748b'];
 
   // --- Logic: Net Worth (Mocked History + Current) ---
-  const totalAssets = investments.reduce((acc, inv) => acc + inv.amount, 0);
+  const totalAssets = investments.reduce((acc, inv) => acc + inv.amount, 0) + goals.reduce((acc, goal) => acc + goal.currentAmount, 0);
   const netWorth = totalAssets; 
 
   const netWorthHistory = [
@@ -220,13 +247,40 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
                                 onChange={e => setInvType(e.target.value as InvestmentType)}
                                 className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
                             >
-                                <option value="fixed">Renda Fixa</option>
+                                <option value="renda_fixa">Renda Fixa</option>
+                                <option value="cdb">CDB</option>
+                                <option value="tesouro">Tesouro Direto</option>
+                                <option value="lci_lca">LCI / LCA</option>
+                                <option value="poupanca">Poupança</option>
+                                <option value="renda_variavel">Renda Variável</option>
                                 <option value="stock">Ações</option>
                                 <option value="fii">FIIs (Fundos Imobiliários)</option>
                                 <option value="crypto">Criptomoedas</option>
                                 <option value="foreign">Exterior</option>
                                 <option value="fund">Fundos de Investimento</option>
                             </select>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Instituição</label>
+                                <input 
+                                    type="text" 
+                                    placeholder="Ex: Banco Inter, XP..."
+                                    value={invInstitution}
+                                    onChange={e => setInvInstitution(e.target.value)}
+                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Rentabilidade</label>
+                                <input 
+                                    type="text" 
+                                    placeholder="Ex: 102% CDI, IPCA+5%"
+                                    value={invProfitability}
+                                    onChange={e => setInvProfitability(e.target.value)}
+                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
+                                />
+                            </div>
                         </div>
                         <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
                              <input 
@@ -326,6 +380,48 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
                                     <option value="1_ano">1 Ano</option>
                                     <option value="personalizado">Personalizado</option>
                                 </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Categoria</label>
+                            <select 
+                                value={goalType}
+                                onChange={e => setGoalType(e.target.value as InvestmentType)}
+                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
+                            >
+                                <option value="renda_fixa">Renda Fixa</option>
+                                <option value="cdb">CDB</option>
+                                <option value="tesouro">Tesouro Direto</option>
+                                <option value="lci_lca">LCI / LCA</option>
+                                <option value="poupanca">Poupança</option>
+                                <option value="renda_variavel">Renda Variável</option>
+                                <option value="stock">Ações</option>
+                                <option value="fii">FIIs (Fundos Imobiliários)</option>
+                                <option value="crypto">Criptomoedas</option>
+                                <option value="foreign">Exterior</option>
+                                <option value="fund">Fundos de Investimento</option>
+                            </select>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Instituição</label>
+                                <input 
+                                    type="text" 
+                                    placeholder="Ex: Banco Inter, XP..."
+                                    value={goalInstitution}
+                                    onChange={e => setGoalInstitution(e.target.value)}
+                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Rentabilidade</label>
+                                <input 
+                                    type="text" 
+                                    placeholder="Ex: 102% CDI, IPCA+5%"
+                                    value={goalProfitability}
+                                    onChange={e => setGoalProfitability(e.target.value)}
+                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
+                                />
                             </div>
                         </div>
                         <button type="submit" className="w-full bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-slate-800 transition-colors">
@@ -442,12 +538,19 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
                     </ResponsiveContainer>
                 </div>
                 {/* List of Investments (Small) */}
-                <div className="mt-4 border-t border-slate-100 dark:border-slate-800 pt-4 space-y-2 max-h-48 overflow-y-auto">
+                <div className="mt-4 border-t border-slate-100 dark:border-slate-800 pt-4 space-y-3 max-h-48 overflow-y-auto">
                     {investments.map(inv => (
                         <div key={inv.id} className="flex justify-between items-center text-xs">
                              <div className="flex items-center gap-2">
                                  <button onClick={() => onDeleteInvestment(inv.id)} className="text-slate-300 hover:text-red-500"><Trash2 size={12}/></button>
-                                 <span className="text-slate-700 dark:text-slate-200 font-medium truncate max-w-[120px]" title={inv.name}>{inv.name}</span>
+                                 <div className="flex flex-col">
+                                     <span className="text-slate-700 dark:text-slate-200 font-medium truncate max-w-[120px]" title={inv.name}>{inv.name}</span>
+                                     {(inv.institution || inv.profitability) && (
+                                         <span className="text-[10px] text-slate-400">
+                                             {inv.institution} {inv.institution && inv.profitability ? ' • ' : ''} {inv.profitability}
+                                         </span>
+                                     )}
+                                 </div>
                              </div>
                              <span className="font-bold text-slate-600 dark:text-slate-300">{formatCurrency(inv.amount)}</span>
                         </div>
@@ -512,6 +615,12 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
                                             )}
                                             {goal.period && (
                                                 <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded capitalize">Período: {goal.period.replace('_', ' ')}</span>
+                                            )}
+                                            {goal.institution && (
+                                                <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">Banco: {goal.institution}</span>
+                                            )}
+                                            {goal.profitability && (
+                                                <span className="bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400 px-1.5 py-0.5 rounded font-medium">{goal.profitability}</span>
                                             )}
                                             <span className="flex items-center gap-0.5 bg-slate-50 dark:bg-slate-950 px-1.5 py-0.5 rounded text-slate-500 dark:text-slate-400">
                                                 <Clock size={8} /> {getRemainingTime(goal.deadline)}

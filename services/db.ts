@@ -133,7 +133,9 @@ const mapInvestmentToDb = (i: Investment, userId: string) => ({
   name: i.name,
   amount: i.amount,
   type: i.type,
-  is_liquidity: i.isLiquidity
+  is_liquidity: i.isLiquidity,
+  institution: i.institution || null,
+  profitability: i.profitability || null
 });
 
 const mapDbToInvestment = (row: any): Investment => ({
@@ -141,7 +143,9 @@ const mapDbToInvestment = (row: any): Investment => ({
   name: row.name,
   amount: Number(row.amount),
   type: row.type as InvestmentType,
-  isLiquidity: row.is_liquidity
+  isLiquidity: row.is_liquidity,
+  institution: row.institution,
+  profitability: row.profitability
 });
 
 const mapGoalToDb = (g: InvestmentGoal, userId: string) => ({
@@ -153,7 +157,10 @@ const mapGoalToDb = (g: InvestmentGoal, userId: string) => ({
   deadline: g.deadline,
   icon: g.icon || null,
   redemption_date: g.redemptionDate || null,
-  period: g.period || null
+  period: g.period || null,
+  institution: g.institution || null,
+  profitability: g.profitability || null,
+  type: g.type || null
 });
 
 const mapDbToGoal = (row: any): InvestmentGoal => ({
@@ -164,7 +171,10 @@ const mapDbToGoal = (row: any): InvestmentGoal => ({
   deadline: row.deadline,
   icon: row.icon,
   redemptionDate: row.redemption_date,
-  period: row.period
+  period: row.period,
+  institution: row.institution,
+  profitability: row.profitability,
+  type: row.type as InvestmentType
 });
 
 export const db = {

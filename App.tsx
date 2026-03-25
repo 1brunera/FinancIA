@@ -767,6 +767,8 @@ const App: React.FC = () => {
 
     const budgetForecast = totalAccumulatedBalance + pendingIncome - pendingBills;
 
+    const totalInvested = investments.reduce((sum, inv) => sum + inv.amount, 0) + investmentGoals.reduce((sum, goal) => sum + goal.currentAmount, 0);
+
     return {
         previousBalance,
         currentIncome,
@@ -774,10 +776,11 @@ const App: React.FC = () => {
         currentBalance,
         totalAccumulatedBalance,
         budgetForecast,
+        totalInvested,
         monthlyTransactions: currentTransactions
     };
 
-  }, [transactions, currentDate, bills, incomeReminders]);
+  }, [transactions, currentDate, bills, incomeReminders, investments, investmentGoals]);
 
   const monthlyBills = useMemo(() => {
     return bills.filter(b => {
@@ -896,9 +899,15 @@ const App: React.FC = () => {
                                 <h2 className="text-3xl md:text-4xl font-bold mb-3 md:mb-4 tracking-tight">
                                     {showValues ? formatCurrency(financialData.budgetForecast) : 'R$ •••••'}
                                 </h2>
-                                <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
-                                    <History size={14} />
-                                    <span>Saldo Atual: {showValues ? formatCurrency(financialData.totalAccumulatedBalance) : 'R$ •••••'}</span>
+                                <div className="flex flex-col gap-1.5">
+                                    <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
+                                        <History size={14} />
+                                        <span>Saldo Atual: {showValues ? formatCurrency(financialData.totalAccumulatedBalance) : 'R$ •••••'}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
+                                        <TrendingUp size={14} className="text-green-400" />
+                                        <span>Investimentos: {showValues ? formatCurrency(financialData.totalInvested) : 'R$ •••••'}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>

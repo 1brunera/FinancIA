@@ -78,7 +78,7 @@ export interface CreditCard {
 
 // --- Investment Types ---
 
-export type InvestmentType = 'fixed' | 'stock' | 'fii' | 'crypto' | 'foreign' | 'fund';
+export type InvestmentType = 'fixed' | 'stock' | 'fii' | 'crypto' | 'foreign' | 'fund' | 'renda_fixa' | 'renda_variavel' | 'cdb' | 'tesouro' | 'lci_lca' | 'poupanca';
 
 export interface Investment {
   id: string;
@@ -86,6 +86,8 @@ export interface Investment {
   amount: number; // Current Value
   type: InvestmentType;
   isLiquidity: boolean; // For Emergency Fund calculation
+  institution?: string; // e.g., "Banco Inter", "XP"
+  profitability?: string; // e.g., "102% CDI", "IPCA + 5%"
 }
 
 export interface InvestmentGoal {
@@ -97,4 +99,7 @@ export interface InvestmentGoal {
   icon?: string; // e.g., 'plane', 'home'
   redemptionDate?: string;
   period?: string; // 'imediato', '3_meses', '6_meses', '1_ano', 'personalizado'
+  institution?: string;
+  profitability?: string;
+  type?: InvestmentType;
 }
