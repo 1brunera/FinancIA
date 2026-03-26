@@ -576,6 +576,10 @@ const App: React.FC = () => {
     if (session) await db.addInvestment(inv, session.user.id);
     setInvestments(prev => [...prev, inv]);
   };
+  const handleEditInvestment = async (updatedInv: Investment) => {
+    if (session) await db.updateInvestment(updatedInv, session.user.id);
+    setInvestments(prev => prev.map(i => i.id === updatedInv.id ? updatedInv : i));
+  };
   const handleDeleteInvestment = async (id: string) => {
     if (session) await db.deleteInvestment(id);
     setInvestments(prev => prev.filter(i => i.id !== id));
@@ -583,6 +587,10 @@ const App: React.FC = () => {
   const handleAddGoal = async (goal: InvestmentGoal) => {
     if (session) await db.addInvestmentGoal(goal, session.user.id);
     setInvestmentGoals(prev => [...prev, goal]);
+  };
+  const handleEditGoal = async (updatedGoal: InvestmentGoal) => {
+    if (session) await db.updateInvestmentGoal(updatedGoal, session.user.id);
+    setInvestmentGoals(prev => prev.map(g => g.id === updatedGoal.id ? updatedGoal : g));
   };
   const handleDeleteGoal = async (id: string) => {
     if (session) await db.deleteInvestmentGoal(id);
@@ -1062,8 +1070,10 @@ const App: React.FC = () => {
                         goals={investmentGoals}
                         transactions={transactions} // To calc avg expense
                         onAddInvestment={handleAddInvestment}
+                        onEditInvestment={handleEditInvestment}
                         onDeleteInvestment={handleDeleteInvestment}
                         onAddGoal={handleAddGoal}
+                        onEditGoal={handleEditGoal}
                         onDeleteGoal={handleDeleteGoal}
                         showValues={showValues}
                     />

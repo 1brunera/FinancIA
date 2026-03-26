@@ -17,6 +17,7 @@ interface TransactionListProps {
 export const TransactionList: React.FC<TransactionListProps> = ({ transactions, onDelete, onEdit, onUpdateStatus, categories, creditCards, showValues = true, hidePaymentMethodFilter = false, showInstallmentFilter = false }) => {
   const [filterPayment, setFilterPayment] = useState<string>('all');
   const [filterInstallment, setFilterInstallment] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
 
   const getCategoryLabel = (id: string) => categories.find(c => c.id === id)?.label || id;
   const getCategoryColor = (id: string) => categories.find(c => c.id === id)?.color || '#94a3b8';
@@ -58,7 +59,12 @@ export const TransactionList: React.FC<TransactionListProps> = ({ transactions, 
           }
       }
 
-      return passPayment && passInstallment;
+      let passStatus = true;
+      if (filterStatus !== 'all') {
+          passStatus = t.status === filterStatus;
+      }
+
+      return passPayment && passInstallment && passStatus;
   });
 
   if (transactions.length === 0) {
@@ -84,6 +90,19 @@ export const TransactionList: React.FC<TransactionListProps> = ({ transactions, 
         </div>
 
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            {/* Status Filter */}
+            <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="w-full sm:w-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold py-2 px-3 rounded-xl outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
+            >
+                <option value="all">Todos os status</option>
+                <option value="Pendente">Pendente</option>
+                <option value="Pago">Pago</option>
+                <option value="Recebido">Recebido</option>
+                <option value="Cancelado">Cancelado</option>
+            </select>
+
             {/* Payment Method Filter */}
             {!hidePaymentMethodFilter && (
                 <select

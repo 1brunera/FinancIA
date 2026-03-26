@@ -8,6 +8,7 @@ import {
   AlertTriangle,
   Plus,
   Trash2,
+  Pencil,
   Calendar,
   Wallet,
   X,
@@ -21,8 +22,10 @@ interface InvestmentsDashboardProps {
   goals: InvestmentGoal[];
   transactions: Transaction[];
   onAddInvestment: (inv: Investment) => void;
+  onEditInvestment: (inv: Investment) => void;
   onDeleteInvestment: (id: string) => void;
   onAddGoal: (goal: InvestmentGoal) => void;
+  onEditGoal: (goal: InvestmentGoal) => void;
   onDeleteGoal: (id: string) => void;
   showValues?: boolean;
 }
@@ -32,8 +35,10 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
   goals,
   transactions,
   onAddInvestment,
+  onEditInvestment,
   onDeleteInvestment,
   onAddGoal,
+  onEditGoal,
   onDeleteGoal,
   showValues = true
 }) => {
@@ -41,6 +46,9 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
   const [emergencyMonths, setEmergencyMonths] = useState<3 | 6 | 12>(6);
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
   const [isInvModalOpen, setIsInvModalOpen] = useState(false);
+
+  const [editingInvId, setEditingInvId] = useState<string | null>(null);
+  const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
 
   // --- Investment Form State ---
   const [invName, setInvName] = useState('');
@@ -61,26 +69,74 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
   const [goalProfitability, setGoalProfitability] = useState('');
   const [goalType, setGoalType] = useState<InvestmentType>('renda_fixa');
 
+  const openInvModal = (inv?: Investment) => {
+      if (inv) {
+          setEditingInvId(inv.id);
+          setInvName(inv.name);
+          setInvAmount(inv.amount.toString());
+          setInvType(inv.type);
+          setIsLiquidity(inv.isLiquidity);
+          setInvInstitution(inv.institution || '');
+          setInvProfitability(inv.profitability || '');
+      } else {
+          setEditingInvId(null);
+          setInvName('');
+          setInvAmount('');
+          setInvType('renda_fixa');
+          setIsLiquidity(false);
+          setInvInstitution('');
+          setInvProfitability('');
+      }
+      setIsInvModalOpen(true);
+  };
+
+  const openGoalModal = (goal?: InvestmentGoal) => {
+      if (goal) {
+          setEditingGoalId(goal.id);
+          setGoalName(goal.name);
+          setGoalTarget(goal.targetAmount.toString());
+          setGoalCurrent(goal.currentAmount.toString());
+          setGoalDeadline(goal.deadline);
+          setGoalRedemptionDate(goal.redemptionDate || '');
+          setGoalPeriod(goal.period || 'imediato');
+          setGoalInstitution(goal.institution || '');
+          setGoalProfitability(goal.profitability || '');
+          setGoalType(goal.type || 'renda_fixa');
+      } else {
+          setEditingGoalId(null);
+          setGoalName('');
+          setGoalTarget('');
+          setGoalCurrent('');
+          setGoalDeadline('');
+          setGoalRedemptionDate('');
+          setGoalPeriod('imediato');
+          setGoalInstitution('');
+          setGoalProfitability('');
+          setGoalType('renda_fixa');
+      }
+      setIsGoalModalOpen(true);
+  };
+
   const handleInvSubmit = (e: React.FormEvent) => {
       e.preventDefault();
       if (!invName || !invAmount) return;
 
-      onAddInvestment({
-          id: crypto.randomUUID(),
+      const invData = {
+          id: editingInvId || crypto.randomUUID(),
           name: invName,
           amount: parseFloat(invAmount),
           type: invType,
           isLiquidity: isLiquidity,
           institution: invInstitution || undefined,
           profitability: invProfitability || undefined
-      });
+      };
 
-      setInvName('');
-      setInvAmount('');
-      setInvType('renda_fixa');
-      setIsLiquidity(false);
-      setInvInstitution('');
-      setInvProfitability('');
+      if (editingInvId) {
+          onEditInvestment(invData);
+      } else {
+          onAddInvestment(invData);
+      }
+
       setIsInvModalOpen(false);
   };
 
@@ -88,8 +144,8 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
       e.preventDefault();
       if (!goalName || !goalTarget || !goalDeadline) return;
 
-      onAddGoal({
-          id: crypto.randomUUID(),
+      const goalData = {
+          id: editingGoalId || crypto.randomUUID(),
           name: goalName,
           targetAmount: parseFloat(goalTarget),
           currentAmount: parseFloat(goalCurrent) || 0,
@@ -99,17 +155,14 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
           institution: goalInstitution || undefined,
           profitability: goalProfitability || undefined,
           type: goalType
-      });
+      };
 
-      setGoalName('');
-      setGoalTarget('');
-      setGoalCurrent('');
-      setGoalDeadline('');
-      setGoalRedemptionDate('');
-      setGoalPeriod('imediato');
-      setGoalInstitution('');
-      setGoalProfitability('');
-      setGoalType('renda_fixa');
+      if (editingGoalId) {
+          onEditGoal(goalData);
+      } else {
+          onAddGoal(goalData);
+      }
+
       setIsGoalModalOpen(false);
   };
 
@@ -212,7 +265,7 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
              <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                  <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-in">
                     <div className="px-6 py-5 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                        <h3 className="text-xl font-bold text-slate-800 dark:text-white">Novo Investimento</h3>
+                        <h3 className="text-xl font-bold text-slate-800 dark:text-white">{editingInvId ? 'Editar Investimento' : 'Novo Investimento'}</h3>
                         <button onClick={() => setIsInvModalOpen(false)} className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-full text-slate-500 dark:text-slate-400 transition-colors">
                             <X size={20} />
                         </button>
@@ -296,7 +349,7 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
                              </label>
                         </div>
                         <button type="submit" className="w-full bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-slate-800 transition-colors">
-                            Adicionar Investimento
+                            {editingInvId ? 'Salvar Alterações' : 'Adicionar Investimento'}
                         </button>
                     </form>
                  </div>
@@ -307,7 +360,7 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
              <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                  <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-in">
                     <div className="px-6 py-5 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                        <h3 className="text-xl font-bold text-slate-800 dark:text-white">Nova Meta / Sonho</h3>
+                        <h3 className="text-xl font-bold text-slate-800 dark:text-white">{editingGoalId ? 'Editar Meta / Sonho' : 'Nova Meta / Sonho'}</h3>
                         <button onClick={() => setIsGoalModalOpen(false)} className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-full text-slate-500 dark:text-slate-400 transition-colors">
                             <X size={20} />
                         </button>
@@ -425,7 +478,7 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
                             </div>
                         </div>
                         <button type="submit" className="w-full bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-slate-800 transition-colors">
-                            Criar Porquinho / Meta
+                            {editingGoalId ? 'Salvar Alterações' : 'Criar Porquinho / Meta'}
                         </button>
                     </form>
                  </div>
@@ -436,13 +489,13 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
             <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Meus Investimentos</h2>
             <div className="flex items-center gap-3">
                 <button 
-                    onClick={() => setIsGoalModalOpen(true)}
+                    onClick={() => openGoalModal()}
                     className="bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 px-4 py-2 rounded-xl text-sm font-bold hover:bg-primary-200 dark:hover:bg-primary-900/50 transition-all flex items-center gap-2"
                 >
                     <Target size={18} /> Criar Porquinho
                 </button>
                 <button 
-                    onClick={() => setIsInvModalOpen(true)}
+                    onClick={() => openInvModal()}
                     className="bg-slate-900 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-slate-800 transition-all flex items-center gap-2"
                 >
                     <Plus size={18} /> Adicionar Investimento
@@ -540,9 +593,8 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
                 {/* List of Investments (Small) */}
                 <div className="mt-4 border-t border-slate-100 dark:border-slate-800 pt-4 space-y-3 max-h-48 overflow-y-auto">
                     {investments.map(inv => (
-                        <div key={inv.id} className="flex justify-between items-center text-xs">
+                        <div key={inv.id} className="flex justify-between items-center text-xs group py-1">
                              <div className="flex items-center gap-2">
-                                 <button onClick={() => onDeleteInvestment(inv.id)} className="text-slate-300 hover:text-red-500"><Trash2 size={12}/></button>
                                  <div className="flex flex-col">
                                      <span className="text-slate-700 dark:text-slate-200 font-medium truncate max-w-[120px]" title={inv.name}>{inv.name}</span>
                                      {(inv.institution || inv.profitability) && (
@@ -552,7 +604,13 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
                                      )}
                                  </div>
                              </div>
-                             <span className="font-bold text-slate-600 dark:text-slate-300">{formatCurrency(inv.amount)}</span>
+                             <div className="flex items-center gap-3">
+                                 <span className="font-bold text-slate-600 dark:text-slate-300">{formatCurrency(inv.amount)}</span>
+                                 <div className="flex gap-2">
+                                     <button onClick={() => openInvModal(inv)} className="text-slate-400 hover:text-blue-500 transition-colors"><Pencil size={14}/></button>
+                                     <button onClick={() => onDeleteInvestment(inv.id)} className="text-slate-400 hover:text-red-500 transition-colors"><Trash2 size={14}/></button>
+                                 </div>
+                             </div>
                         </div>
                     ))}
                 </div>
@@ -592,7 +650,7 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
                      <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
                         <Target size={20} className="text-red-500" /> Porquinhos / Metas
                     </h3>
-                    <button onClick={() => setIsGoalModalOpen(true)} className="p-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-lg text-slate-600 dark:text-slate-300 transition-colors">
+                    <button onClick={() => openGoalModal()} className="p-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-lg text-slate-600 dark:text-slate-300 transition-colors">
                         <Plus size={16} />
                     </button>
                 </div>
@@ -602,9 +660,14 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
                         const progress = (goal.currentAmount / goal.targetAmount) * 100;
                         return (
                             <div key={goal.id} className="group relative">
-                                <button onClick={() => onDeleteGoal(goal.id)} className="absolute -right-2 -top-2 p-1 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Trash2 size={12} />
-                                </button>
+                                <div className="absolute right-0 top-0 flex gap-2">
+                                    <button onClick={() => openGoalModal(goal)} className="p-1 text-slate-400 hover:text-blue-500 transition-colors">
+                                        <Pencil size={14} />
+                                    </button>
+                                    <button onClick={() => onDeleteGoal(goal.id)} className="p-1 text-slate-400 hover:text-red-500 transition-colors">
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
                                 <div className="flex justify-between items-end mb-1">
                                     <div>
                                         <p className="font-bold text-slate-700 dark:text-slate-200 text-sm">{goal.name}</p>
