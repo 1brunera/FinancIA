@@ -177,7 +177,7 @@ const App: React.FC = () => {
   const toggleDashboardConfig = (key: keyof typeof dashboardConfig) => {
     const newConfig = { ...dashboardConfig, [key]: !dashboardConfig[key] };
     setDashboardConfig(newConfig);
-    localStorage.setItem('finance_dashboard_config', JSON.stringify(newConfig));
+    saveToLocal('finance_dashboard_config', newConfig);
   };
 
   useEffect(() => {
@@ -186,7 +186,7 @@ const App: React.FC = () => {
     } else {
       document.documentElement.classList.remove('dark');
     }
-    localStorage.setItem('finance_theme', theme);
+    saveToLocal('finance_theme', theme);
   }, [theme]);
 
 
@@ -223,16 +223,27 @@ const App: React.FC = () => {
   }, [session]);
 
   // --- Persistence ---
+  const saveToLocal = (key: string, data: any) => {
+    try {
+      localStorage.setItem(key, typeof data === 'string' ? data : JSON.stringify(data));
+    } catch (error) {
+      if (error instanceof DOMException && (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
+        console.error('LocalStorage quota exceeded:', key);
+        alert('Aviso: O limite de armazenamento do navegador foi atingido! Seus últimos dados podem não ter sido salvos. Recomendamos fazer login para salvar na nuvem.');
+      }
+    }
+  };
+
   useEffect(() => {
-    localStorage.setItem('finance_transactions', JSON.stringify(transactions));
+    saveToLocal('finance_transactions', transactions);
   }, [transactions]);
 
   useEffect(() => {
-    localStorage.setItem('finance_categories', JSON.stringify(categories));
+    saveToLocal('finance_categories', categories);
   }, [categories]);
 
   useEffect(() => {
-    localStorage.setItem('finance_bills', JSON.stringify(bills));
+    saveToLocal('finance_bills', bills);
   }, [bills]);
 
   // Sync credit card bills based on transactions
@@ -309,19 +320,19 @@ const App: React.FC = () => {
   }, [transactions, creditCards]);
 
   useEffect(() => {
-    localStorage.setItem('finance_income_reminders', JSON.stringify(incomeReminders));
+    saveToLocal('finance_income_reminders', incomeReminders);
   }, [incomeReminders]);
 
   useEffect(() => {
-    localStorage.setItem('finance_credit_cards', JSON.stringify(creditCards));
+    saveToLocal('finance_credit_cards', creditCards);
   }, [creditCards]);
 
   useEffect(() => {
-    localStorage.setItem('finance_investments', JSON.stringify(investments));
+    saveToLocal('finance_investments', investments);
   }, [investments]);
 
   useEffect(() => {
-    localStorage.setItem('finance_investment_goals', JSON.stringify(investmentGoals));
+    saveToLocal('finance_investment_goals', investmentGoals);
   }, [investmentGoals]);
 
   // --- Handlers ---

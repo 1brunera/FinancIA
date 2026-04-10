@@ -187,13 +187,17 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({
     const startStr = formatDateStr(startDate);
     const endStr = formatDateStr(endDate);
     
-    const cardTransactions = transactions.filter(t => {
+    // Transactions for the specific invoice period (for calculation)
+    const invoiceTransactions = transactions.filter(t => {
         if (t.paymentMethodId !== selectedCard.id) return false;
         return t.date >= startStr && t.date <= endStr;
     });
-    cardTransactions.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-    const calculatedInvoiceAmount = cardTransactions.reduce((acc, t) => acc + t.amount, 0);
+    const calculatedInvoiceAmount = invoiceTransactions.reduce((acc, t) => acc + t.amount, 0);
+    
+    // All transactions for this card (for the list)
+    const allCardTransactions = transactions.filter(t => t.paymentMethodId === selectedCard.id);
+    allCardTransactions.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     
     const dueMonth = selectedCard.dueDay < selectedCard.closingDay ? invoiceMonth + 1 : invoiceMonth;
     const dueYear = dueMonth > 11 ? invoiceYear + 1 : invoiceYear;
@@ -531,9 +535,9 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({
                     </div>
                 )}
 
-                {cardTransactions.length > 0 ? (
+                {allCardTransactions.length > 0 ? (
                     <TransactionList 
-                        transactions={cardTransactions}
+                        transactions={allCardTransactions}
                         onDelete={onDeleteTransaction}
                         onEdit={onEditTransaction}
                         categories={categories}
@@ -712,7 +716,22 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({
                    // Calculate simplified stats for card preview
                    const cardSpent = getMonthlyExpenses(card.id);
                    const available = card.limit - cardSpent;
-                   const currentInvoiceAmount = getCalculatedInvoiceAmount(card, new Date());
+                   
+                   const today = new Date();
+                   const invoiceMonth = today.getMonth();
+                   const invoiceYear = today.getFullYear();
+                   const dueMonth = card.dueDay < card.closingDay ? invoiceMonth + 1 : invoiceMonth;
+                   const dueYear = dueMonth > 11 ? invoiceYear + 1 : invoiceYear;
+                   const actualDueMonth = dueMonth % 12;
+                   const expectedDueDateStr = `${dueYear}-${String(actualDueMonth + 1).padStart(2, '0')}-${String(card.dueDay).padStart(2, '0')}`;
+                   
+                   const existingBill = bills.find(b => 
+                       b.paymentMethodId === card.id && 
+                       b.dueDate === expectedDueDateStr
+                   );
+
+                   const calculatedInvoiceAmount = getCalculatedInvoiceAmount(card, today);
+                   const currentInvoiceAmount = existingBill ? existingBill.amount : calculatedInvoiceAmount;
 
                    return (
                    <div 
