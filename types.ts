@@ -14,6 +14,7 @@ export interface Transaction {
   paymentMethodId?: string; // 'cash' or CreditCard.id
   date: string;
   status?: TransactionStatus;
+  invoiceMonth?: string; // e.g. '2026-10' (reference invoice month for credit card charges)
   installments?: {
     current: number;
     total: number;

@@ -1,5 +1,6 @@
 {
   "name": "FinanceIA",
   "description": "Um organizador financeiro pessoal completo com rastreamento de despesas, visualização de dados e consultoria financeira impulsionada por IA (Gemini).",
-  "requestFramePermissions": []
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

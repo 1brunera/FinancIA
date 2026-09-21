@@ -4,6 +4,7 @@ import { CreditCard as CreditCardType, Transaction, TransactionType, CategoryOpt
 import { COLOR_PALETTE, DEFAULT_CATEGORIES } from '../constants';
 import { TransactionList } from './TransactionList';
 import { TransactionForm } from './TransactionForm';
+import { getCardInvoiceInfo } from '../utils/creditCard';
 
 interface CreditCardManagerProps {
   cards: CreditCardType[];
@@ -45,9 +46,21 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({
   const [editedInvoiceAmount, setEditedInvoiceAmount] = useState('');
   const [isConfirmingInvoice, setIsConfirmingInvoice] = useState(false);
   const [pendingInvoiceAmount, setPendingInvoiceAmount] = useState<number | null>(null);
+  const [cardTxViewMode, setCardTxViewMode] = useState<'invoice' | 'all'>('invoice');
 
   React.useEffect(() => {
-    setInvoiceDate(new Date());
+    if (selectedCard) {
+      const now = new Date();
+      // If today is past the card's closing day, the active open invoice is next month!
+      if (now.getDate() > selectedCard.closingDay) {
+        setInvoiceDate(new Date(now.getFullYear(), now.getMonth() + 1, 1));
+      } else {
+        setInvoiceDate(new Date(now.getFullYear(), now.getMonth(), 1));
+      }
+    } else {
+      setInvoiceDate(new Date());
+    }
+    setCardTxViewMode('invoice');
     setIsEditingInvoice(false);
     setIsConfirmingInvoice(false);
     setPendingInvoiceAmount(null);
@@ -155,9 +168,13 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({
       const { startDate, endDate } = getInvoicePeriod(card, date);
       const startStr = formatDateStr(startDate);
       const endStr = formatDateStr(endDate);
+      const targetInvoiceMonthStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       
       const cardTransactions = transactions.filter(t => {
           if (t.paymentMethodId !== card.id) return false;
+          if (t.invoiceMonth) {
+              return t.invoiceMonth === targetInvoiceMonthStr;
+          }
           return t.date >= startStr && t.date <= endStr;
       });
       
@@ -182,16 +199,21 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({
   if (selectedCard) {
     const invoiceMonth = invoiceDate.getMonth();
     const invoiceYear = invoiceDate.getFullYear();
+    const currentInvoiceMonthStr = `${invoiceYear}-${String(invoiceMonth + 1).padStart(2, '0')}`;
 
     const { startDate, endDate } = getInvoicePeriod(selectedCard, invoiceDate);
     const startStr = formatDateStr(startDate);
     const endStr = formatDateStr(endDate);
     
-    // Transactions for the specific invoice period (for calculation)
+    // Transactions for the specific invoice period (for calculation and filtered view)
     const invoiceTransactions = transactions.filter(t => {
         if (t.paymentMethodId !== selectedCard.id) return false;
+        if (t.invoiceMonth) {
+            return t.invoiceMonth === currentInvoiceMonthStr;
+        }
         return t.date >= startStr && t.date <= endStr;
     });
+    invoiceTransactions.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     const calculatedInvoiceAmount = invoiceTransactions.reduce((acc, t) => acc + t.amount, 0);
     
@@ -199,15 +221,20 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({
     const allCardTransactions = transactions.filter(t => t.paymentMethodId === selectedCard.id);
     allCardTransactions.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     
-    const dueMonth = selectedCard.dueDay < selectedCard.closingDay ? invoiceMonth + 1 : invoiceMonth;
+    const dueMonth = selectedCard.dueDay <= selectedCard.closingDay ? invoiceMonth + 1 : invoiceMonth;
     const dueYear = dueMonth > 11 ? invoiceYear + 1 : invoiceYear;
     const actualDueMonth = dueMonth % 12;
     
     const expectedDueDateStr = `${dueYear}-${String(actualDueMonth + 1).padStart(2, '0')}-${String(selectedCard.dueDay).padStart(2, '0')}`;
+    const formattedDueDate = `${String(selectedCard.dueDay).padStart(2, '0')}/${String(actualDueMonth + 1).padStart(2, '0')}/${dueYear}`;
     
+    // Period date labels
+    const periodStartFormatted = `${String(startDate.getDate()).padStart(2, '0')}/${String(startDate.getMonth() + 1).padStart(2, '0')}`;
+    const periodEndFormatted = `${String(endDate.getDate()).padStart(2, '0')}/${String(endDate.getMonth() + 1).padStart(2, '0')}`;
+
     const existingBill = bills.find(b => 
-        b.paymentMethodId === selectedCard.id && 
-        b.dueDate === expectedDueDateStr
+        (b.paymentMethodId === selectedCard.id || b.id.startsWith(`cc-invoice-${selectedCard.id}-`)) && 
+        (b.dueDate === expectedDueDateStr || b.id.includes(currentInvoiceMonthStr))
     );
 
     const displayInvoiceAmount = existingBill ? existingBill.amount : calculatedInvoiceAmount;
@@ -282,6 +309,9 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({
                                 <X size={20} />
                             </button>
                         </div>
+                         <span className="text-[10px] text-white/80 block mb-1">
+                             {periodStartFormatted} a {periodEndFormatted}
+                         </span>
                         <div className="p-6">
                             <p className="text-slate-600 dark:text-slate-300 mb-6">
                                 O valor da fatura alterará o valor a ser pago em contas a pagar referente ao cartão selecionado, deseja prosseguir?
@@ -502,17 +532,45 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({
             </div>
 
             <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 p-4 md:p-6">
-                <div className="flex items-center justify-between mb-4 md:mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 md:mb-6">
                     <div className="flex items-center gap-2">
                         <Layers className="text-primary-600" size={24} />
-                        <h3 className="text-lg font-bold text-slate-800 dark:text-white">Histórico de Transações</h3>
+                        <h3 className="text-lg font-bold text-slate-800 dark:text-white">Transações do Cartão</h3>
                     </div>
-                    <button
-                        onClick={() => setIsAddingTransaction(true)}
-                        className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-primary-700 transition-colors flex items-center gap-2"
-                    >
-                        <Plus size={16} /> Adicionar gasto
-                    </button>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+                            <button
+                                type="button"
+                                onClick={() => setCardTxViewMode('invoice')}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                    cardTxViewMode === 'invoice'
+                                        ? 'bg-white dark:bg-slate-900 text-primary-600 dark:text-primary-400 shadow-sm'
+                                        : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                                }`}
+                            >
+                                Desta Fatura ({invoiceTransactions.length})
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setCardTxViewMode('all')}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                    cardTxViewMode === 'all'
+                                        ? 'bg-white dark:bg-slate-900 text-primary-600 dark:text-primary-400 shadow-sm'
+                                        : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                                }`}
+                            >
+                                Todas do Cartão ({allCardTransactions.length})
+                            </button>
+                        </div>
+
+                        <button
+                            onClick={() => setIsAddingTransaction(true)}
+                            className="bg-primary-600 text-white px-4 py-2 rounded-xl text-xs md:text-sm font-bold hover:bg-primary-700 transition-colors flex items-center gap-2 shrink-0 shadow-sm"
+                        >
+                            <Plus size={16} /> Adicionar gasto
+                        </button>
+                    </div>
                 </div>
                 
                 {isAddingTransaction && (
@@ -535,9 +593,9 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({
                     </div>
                 )}
 
-                {allCardTransactions.length > 0 ? (
+                {(cardTxViewMode === 'invoice' ? invoiceTransactions : allCardTransactions).length > 0 ? (
                     <TransactionList 
-                        transactions={allCardTransactions}
+                        transactions={cardTxViewMode === 'invoice' ? invoiceTransactions : allCardTransactions}
                         onDelete={onDeleteTransaction}
                         onEdit={onEditTransaction}
                         categories={categories}
@@ -547,7 +605,9 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({
                     />
                 ) : (
                     <div className="text-center py-10 text-slate-400">
-                        Nenhuma transação registrada neste cartão.
+                        {cardTxViewMode === 'invoice'
+                            ? `Nenhuma transação registrada na fatura de ${invoiceMonthName}.`
+                            : 'Nenhuma transação registrada neste cartão.'}
                     </div>
                 )}
             </div>
@@ -718,19 +778,23 @@ export const CreditCardManager: React.FC<CreditCardManagerProps> = ({
                    const available = card.limit - cardSpent;
                    
                    const today = new Date();
-                   const invoiceMonth = today.getMonth();
-                   const invoiceYear = today.getFullYear();
-                   const dueMonth = card.dueDay < card.closingDay ? invoiceMonth + 1 : invoiceMonth;
+                   const activeInvoiceDate = today.getDate() > card.closingDay
+                       ? new Date(today.getFullYear(), today.getMonth() + 1, 1)
+                       : new Date(today.getFullYear(), today.getMonth(), 1);
+                   const invoiceMonth = activeInvoiceDate.getMonth();
+                   const invoiceYear = activeInvoiceDate.getFullYear();
+                   const targetInvoiceMonthStr = `${invoiceYear}-${String(invoiceMonth + 1).padStart(2, '0')}`;
+                   const dueMonth = card.dueDay <= card.closingDay ? invoiceMonth + 1 : invoiceMonth;
                    const dueYear = dueMonth > 11 ? invoiceYear + 1 : invoiceYear;
                    const actualDueMonth = dueMonth % 12;
                    const expectedDueDateStr = `${dueYear}-${String(actualDueMonth + 1).padStart(2, '0')}-${String(card.dueDay).padStart(2, '0')}`;
                    
                    const existingBill = bills.find(b => 
-                       b.paymentMethodId === card.id && 
-                       b.dueDate === expectedDueDateStr
+                       (b.paymentMethodId === card.id || b.id.startsWith(`cc-invoice-${card.id}-`)) && 
+                       (b.dueDate === expectedDueDateStr || b.id.includes(targetInvoiceMonthStr))
                    );
 
-                   const calculatedInvoiceAmount = getCalculatedInvoiceAmount(card, today);
+                   const calculatedInvoiceAmount = getCalculatedInvoiceAmount(card, activeInvoiceDate);
                    const currentInvoiceAmount = existingBill ? existingBill.amount : calculatedInvoiceAmount;
 
                    return (

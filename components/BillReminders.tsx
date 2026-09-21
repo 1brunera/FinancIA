@@ -421,13 +421,18 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
                                     className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all font-medium text-sm appearance-none"
                                 >
                                     <option value="none">Única</option>
-                                    <option value="monthly">Mensal</option>
+                                    <option value="monthly">Mensal (até Dezembro)</option>
                                     <option value="yearly">Anual</option>
                                 </select>
                                 <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500 dark:text-slate-400">
                                     <Repeat size={16} />
                                 </div>
                              </div>
+                             {recurrence === 'monthly' && dueDate && (
+                                <p className="text-[11px] text-indigo-600 dark:text-indigo-400 mt-1.5 font-medium">
+                                    Lançamentos até Dezembro de {new Date(dueDate + 'T12:00:00').getFullYear()}.
+                                </p>
+                             )}
                         </div>
                     </div>
 

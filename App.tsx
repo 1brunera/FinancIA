@@ -17,6 +17,7 @@ import { supabase } from './services/supabase';
 import { db } from './services/db';
 import { AuthScreen } from './components/AuthScreen';
 import { Session } from '@supabase/supabase-js';
+import { getCardInvoiceInfo } from './utils/creditCard';
 
 const App: React.FC = () => {
   // --- Auth State ---
@@ -79,7 +80,21 @@ const App: React.FC = () => {
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
     try {
         const saved = localStorage.getItem('finance_transactions');
-        return saved ? JSON.parse(saved) : MOCK_TRANSACTIONS;
+        if (saved) {
+            const parsed = JSON.parse(saved) as Transaction[];
+            // Sanitize recurring descriptions to remove '(Recorrente X/Y)' or '(X/Y)' if not installment
+            return parsed.map(t => {
+                let desc = t.description;
+                if (desc.includes('(Recorrente')) {
+                    desc = desc.replace(/\s*\(Recorrente(\s+\d+\/\d+)?\)/gi, '').trim();
+                }
+                if (!t.installments && /\s*\(\d+\/\d+\)$/.test(desc)) {
+                    desc = desc.replace(/\s*\(\d+\/\d+\)$/, '').trim();
+                }
+                return { ...t, description: desc };
+            });
+        }
+        return MOCK_TRANSACTIONS;
     } catch {
         return MOCK_TRANSACTIONS;
     }
@@ -105,7 +120,34 @@ const App: React.FC = () => {
   const [bills, setBills] = useState<Bill[]>(() => {
     try {
       const saved = localStorage.getItem('finance_bills');
-      return saved ? JSON.parse(saved) : [];
+      if (saved) {
+        const parsed = JSON.parse(saved) as Bill[];
+        // Filter out recurring bill instances beyond December of their starting year
+        const groupMinYear: Record<string, number> = {};
+        parsed.forEach(b => {
+          if (b.groupId && b.recurrence !== 'none') {
+            const y = parseInt(b.dueDate.split('-')[0], 10);
+            if (!groupMinYear[b.groupId] || y < groupMinYear[b.groupId]) {
+              groupMinYear[b.groupId] = y;
+            }
+          }
+        });
+
+        return parsed.filter(b => {
+          if (b.groupId && b.recurrence !== 'none' && groupMinYear[b.groupId]) {
+            const y = parseInt(b.dueDate.split('-')[0], 10);
+            return y === groupMinYear[b.groupId];
+          }
+          return true;
+        }).map(b => {
+          let desc = b.description;
+          if (desc.includes('(Recorrente')) {
+            desc = desc.replace(/\s*\(Recorrente(\s+\d+\/\d+)?\)/gi, '').trim();
+          }
+          return { ...b, description: desc };
+        });
+      }
+      return [];
     } catch {
       return [];
     }
@@ -114,7 +156,27 @@ const App: React.FC = () => {
   const [incomeReminders, setIncomeReminders] = useState<IncomeReminder[]>(() => {
     try {
       const saved = localStorage.getItem('finance_income_reminders');
-      return saved ? JSON.parse(saved) : [];
+      if (saved) {
+        const parsed = JSON.parse(saved) as IncomeReminder[];
+        const groupMinYear: Record<string, number> = {};
+        parsed.forEach(i => {
+          if (i.groupId && i.recurrence !== 'none') {
+            const y = parseInt(i.dueDate.split('-')[0], 10);
+            if (!groupMinYear[i.groupId] || y < groupMinYear[i.groupId]) {
+              groupMinYear[i.groupId] = y;
+            }
+          }
+        });
+
+        return parsed.filter(i => {
+          if (i.groupId && i.recurrence !== 'none' && groupMinYear[i.groupId]) {
+            const y = parseInt(i.dueDate.split('-')[0], 10);
+            return y === groupMinYear[i.groupId];
+          }
+          return true;
+        });
+      }
+      return [];
     } catch {
       return [];
     }
@@ -252,7 +314,7 @@ const App: React.FC = () => {
       const nonCcBills = prevBills.filter(b => !b.id.startsWith('cc-invoice-'));
       const ccBillsMap = new Map<string, Bill>();
 
-      // Retain existing cc bills to keep their isPaid status
+      // Retain existing cc bills to keep their isPaid and isManualAmount status
       prevBills.filter(b => b.id.startsWith('cc-invoice-')).forEach(b => {
         ccBillsMap.set(b.id, { ...b, amount: b.isManualAmount ? b.amount : 0 }); // Reset amount to recalculate only if not manual
       });
@@ -261,45 +323,35 @@ const App: React.FC = () => {
         if (t.type === TransactionType.EXPENSE && t.paymentMethodId && t.paymentMethodId !== 'cash') {
           const card = creditCards.find(c => c.id === t.paymentMethodId);
           if (card) {
-            const tDate = new Date(t.date + 'T12:00:00');
-            let month = tDate.getMonth();
-            let year = tDate.getFullYear();
+            const invoiceInfo = getCardInvoiceInfo(card, t.date, t.invoiceMonth);
+            const invoiceId = `cc-invoice-${card.id}-${invoiceInfo.invoiceMonthStr}`;
             
-            if (tDate.getDate() > card.closingDay) {
-                month += 1;
-                if (month > 11) {
-                    month = 0;
-                    year += 1;
+            // Check if there is an existing bill under invoiceId or previous format
+            let targetKey = invoiceId;
+            if (!ccBillsMap.has(targetKey)) {
+              for (const [k, v] of ccBillsMap.entries()) {
+                if (k.startsWith(`cc-invoice-${card.id}-`) && v.dueDate === invoiceInfo.dueDateStr) {
+                  targetKey = k;
+                  break;
                 }
+              }
             }
-            
-            let dueMonth = month;
-            let dueYear = year;
-            if (card.dueDay <= card.closingDay) {
-                dueMonth += 1;
-                if (dueMonth > 11) {
-                    dueMonth = 0;
-                    dueYear += 1;
-                }
-            }
-            
-            const expectedDueDateStr = `${dueYear}-${String(dueMonth + 1).padStart(2, '0')}-${String(card.dueDay).padStart(2, '0')}`;
-            const invoiceId = `cc-invoice-${card.id}-${year}-${month}`;
-            
-            if (ccBillsMap.has(invoiceId)) {
-                if (!ccBillsMap.get(invoiceId)!.isManualAmount) {
-                    ccBillsMap.get(invoiceId)!.amount += t.amount;
+
+            if (ccBillsMap.has(targetKey)) {
+                const target = ccBillsMap.get(targetKey)!;
+                if (!target.isManualAmount) {
+                    target.amount += t.amount;
                 }
             } else {
                 ccBillsMap.set(invoiceId, {
                     id: invoiceId,
-                    description: `Fatura ${card.name}`,
+                    description: `Fatura ${card.name} (${invoiceInfo.invoiceShortLabel})`,
                     amount: t.amount,
-                    dueDate: expectedDueDateStr,
+                    dueDate: invoiceInfo.dueDateStr,
                     notifyDaysBefore: 3,
                     isPaid: false,
                     recurrence: 'none',
-                    category: 'outros',
+                    category: 'Cartão de Crédito',
                     paymentMethodId: 'cash' // The invoice itself is paid with cash/account balance
                 });
             }
@@ -395,11 +447,13 @@ const App: React.FC = () => {
             isPaid: false,
             groupId
         });
-    } else {
-        const instances = newBill.recurrence === 'monthly' ? 60 : 10; // 5 years for monthly, 10 years for yearly
-        let currentDueDate = new Date(newBill.dueDate + 'T12:00:00'); // Use noon to avoid timezone issues
+    } else if (newBill.recurrence === 'monthly') {
+        const startDueDate = new Date(newBill.dueDate + 'T12:00:00');
+        const startYear = startDueDate.getFullYear();
+        let currentDueDate = new Date(startDueDate);
         
-        for (let i = 0; i < instances; i++) {
+        // Contas recorrentes vão somente até dezembro do ano em questão
+        while (currentDueDate.getFullYear() === startYear) {
             billsToAdd.push({
                 ...newBill,
                 id: crypto.randomUUID(),
@@ -408,15 +462,19 @@ const App: React.FC = () => {
                 groupId
             });
             
-            // Calculate next date
             const nextDate = new Date(currentDueDate);
-            if (newBill.recurrence === 'monthly') {
-                nextDate.setMonth(nextDate.getMonth() + 1);
-            } else if (newBill.recurrence === 'yearly') {
-                nextDate.setFullYear(nextDate.getFullYear() + 1);
-            }
+            nextDate.setMonth(nextDate.getMonth() + 1);
             currentDueDate = nextDate;
         }
+    } else if (newBill.recurrence === 'yearly') {
+        // Apenas para o ano em questão
+        billsToAdd.push({
+            ...newBill,
+            id: newBill.id || crypto.randomUUID(),
+            isPaid: false,
+            dueDate: newBill.dueDate,
+            groupId
+        });
     }
     
     if (session) await db.addBills(billsToAdd, session.user.id);
@@ -487,11 +545,13 @@ const App: React.FC = () => {
             isReceived: false,
             groupId
         });
-    } else {
-        const instances = newIncome.recurrence === 'monthly' ? 60 : 10; // 5 years for monthly, 10 years for yearly
-        let currentDueDate = new Date(newIncome.dueDate + 'T12:00:00'); // Use noon to avoid timezone issues
+    } else if (newIncome.recurrence === 'monthly') {
+        const startDueDate = new Date(newIncome.dueDate + 'T12:00:00');
+        const startYear = startDueDate.getFullYear();
+        let currentDueDate = new Date(startDueDate);
         
-        for (let i = 0; i < instances; i++) {
+        // Receitas recorrentes vão somente até dezembro do ano em questão
+        while (currentDueDate.getFullYear() === startYear) {
             incomesToAdd.push({
                 ...newIncome,
                 id: crypto.randomUUID(),
@@ -500,15 +560,19 @@ const App: React.FC = () => {
                 groupId
             });
             
-            // Calculate next date
             const nextDate = new Date(currentDueDate);
-            if (newIncome.recurrence === 'monthly') {
-                nextDate.setMonth(nextDate.getMonth() + 1);
-            } else if (newIncome.recurrence === 'yearly') {
-                nextDate.setFullYear(nextDate.getFullYear() + 1);
-            }
+            nextDate.setMonth(nextDate.getMonth() + 1);
             currentDueDate = nextDate;
         }
+    } else if (newIncome.recurrence === 'yearly') {
+        // Apenas para o ano em questão
+        incomesToAdd.push({
+            ...newIncome,
+            id: crypto.randomUUID(),
+            isReceived: false,
+            dueDate: newIncome.dueDate,
+            groupId
+        });
     }
     
     if (session) await db.addIncomeReminders(incomesToAdd, session.user.id);
