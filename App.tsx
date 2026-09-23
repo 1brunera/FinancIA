@@ -995,18 +995,6 @@ const App: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Current Month Balance (Only this month) */}
-                        <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden group">
-                            <div className={`absolute top-4 right-4 p-2 rounded-xl ${financialData.currentBalance >= 0 ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400'}`}>
-                                <Wallet size={24} />
-                            </div>
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 md:mb-3">Saldo do Mês</p>
-                            <h2 className={`text-2xl md:text-3xl font-bold tracking-tight ${financialData.currentBalance >= 0 ? 'text-slate-800 dark:text-white' : 'text-rose-600 dark:text-rose-400'}`}>
-                                {showValues ? formatCurrency(financialData.currentBalance) : 'R$ •••••'}
-                            </h2>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 font-medium">Resultado líquido deste mês</p>
-                        </div>
-
                         {/* Current Month Income */}
                         <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden group">
                             <div className="absolute top-4 right-4 p-2 bg-green-50 text-green-600 rounded-xl">
@@ -1029,6 +1017,18 @@ const App: React.FC = () => {
                                 {showValues ? formatCurrency(financialData.currentExpense) : 'R$ •••••'}
                             </h2>
                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 font-medium">Saídas este mês</p>
+                        </div>
+
+                        {/* Current Month Balance (Only this month) */}
+                        <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden group">
+                            <div className={`absolute top-4 right-4 p-2 rounded-xl ${financialData.currentBalance >= 0 ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400'}`}>
+                                <Wallet size={24} />
+                            </div>
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 md:mb-3">Saldo do Mês</p>
+                            <h2 className={`text-2xl md:text-3xl font-bold tracking-tight ${financialData.currentBalance >= 0 ? 'text-slate-800 dark:text-white' : 'text-rose-600 dark:text-rose-400'}`}>
+                                {showValues ? formatCurrency(financialData.currentBalance) : 'R$ •••••'}
+                            </h2>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 font-medium">Resultado líquido deste mês</p>
                         </div>
                     </div>
 
