@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Bell, Calendar, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Wallet, Menu, History, PiggyBank, Sun, Moon, CreditCard as CreditCardIcon, Settings2, Eye, EyeOff } from 'lucide-react';
+import { Plus, Bell, Calendar, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Wallet, Menu, History, PiggyBank, Sun, Moon, CreditCard as CreditCardIcon, Settings2, Eye, EyeOff, FileDown } from 'lucide-react';
 import { Transaction, TransactionType, CategoryOption, Bill, CreditCard, IncomeReminder, Investment, InvestmentGoal } from './types';
 import { MOCK_TRANSACTIONS, DEFAULT_CATEGORIES, MOCK_INVESTMENTS, MOCK_GOALS } from './constants';
 import { TransactionForm } from './components/TransactionForm';
@@ -18,6 +18,7 @@ import { db } from './services/db';
 import { AuthScreen } from './components/AuthScreen';
 import { Session } from '@supabase/supabase-js';
 import { getCardInvoiceInfo } from './utils/creditCard';
+import { exportMonthlySummaryPDF } from './utils/exportPDF';
 
 const App: React.FC = () => {
   // --- Auth State ---
@@ -901,20 +902,48 @@ const App: React.FC = () => {
     });
   }, [bills]);
 
+  // --- Handlers & Export ---
+  const handleExportPDF = () => {
+    exportMonthlySummaryPDF({
+      currentDate,
+      budgetForecast: financialData.budgetForecast,
+      totalAccumulatedBalance: financialData.totalAccumulatedBalance,
+      totalInvested: financialData.totalInvested,
+      currentIncome: financialData.currentIncome,
+      currentExpense: financialData.currentExpense,
+      currentBalance: financialData.currentBalance,
+      monthlyTransactions: financialData.monthlyTransactions,
+      categories,
+      creditCards,
+      monthlyBills,
+      monthlyIncomes,
+      userName: session?.user?.user_metadata?.full_name || session?.user?.email?.split('@')[0]
+    });
+  };
+
   // --- Reusable Components ---
   const MonthSelector = () => (
-    <div className="flex items-center justify-center mb-6 md:mb-8">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-6 md:mb-8">
+        <div className="hidden sm:block w-36" />
         <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-1 flex items-center gap-2">
-            <button onClick={() => changeMonth(-1)} className="p-2 hover:bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-400 transition-colors">
+            <button onClick={() => changeMonth(-1)} className="p-2 hover:bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-400 transition-colors" title="Mês anterior">
                 <ChevronLeft size={20} />
             </button>
             <span className="w-40 md:w-48 text-center font-bold text-slate-800 dark:text-white select-none text-sm md:text-base">
                 {formatCurrentMonth()}
             </span>
-            <button onClick={() => changeMonth(1)} className="p-2 hover:bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-400 transition-colors">
+            <button onClick={() => changeMonth(1)} className="p-2 hover:bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-400 transition-colors" title="Próximo mês">
                 <ChevronRight size={20} />
             </button>
         </div>
+        <button
+            onClick={handleExportPDF}
+            className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm font-semibold text-xs md:text-sm transition-all hover:shadow hover:border-primary-400 dark:hover:border-primary-500 active:scale-[0.98]"
+            title="Exportar Resumo do Mês em PDF (amigável para impressão)"
+        >
+            <FileDown size={18} className="text-primary-600 dark:text-primary-400" />
+            <span>Exportar PDF</span>
+        </button>
     </div>
   );
 
@@ -1019,16 +1048,36 @@ const App: React.FC = () => {
                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 font-medium">Saídas este mês</p>
                         </div>
 
-                        {/* Current Month Balance (Only this month) */}
-                        <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden group">
-                            <div className={`absolute top-4 right-4 p-2 rounded-xl ${financialData.currentBalance >= 0 ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400'}`}>
-                                <Wallet size={24} />
+                        {/* Current Month Balance (Only this month) - Highlighted with prominent green/red styling */}
+                        <div className={`p-5 md:p-6 rounded-3xl shadow-xl transition-all relative overflow-hidden group ${
+                            financialData.currentBalance >= 0 
+                                ? 'bg-gradient-to-br from-emerald-600 via-emerald-600 to-teal-700 text-white shadow-emerald-500/25 dark:shadow-emerald-950/40 border border-emerald-500/40 ring-1 ring-emerald-400/30' 
+                                : 'bg-gradient-to-br from-rose-600 via-rose-600 to-red-700 text-white shadow-rose-500/25 dark:shadow-rose-950/40 border border-rose-500/40 ring-1 ring-rose-400/30'
+                        }`}>
+                            <div className="absolute top-0 right-0 p-6 opacity-15 group-hover:opacity-25 transition-opacity pointer-events-none">
+                                <Wallet size={80} />
                             </div>
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 md:mb-3">Saldo do Mês</p>
-                            <h2 className={`text-2xl md:text-3xl font-bold tracking-tight ${financialData.currentBalance >= 0 ? 'text-slate-800 dark:text-white' : 'text-rose-600 dark:text-rose-400'}`}>
-                                {showValues ? formatCurrency(financialData.currentBalance) : 'R$ •••••'}
-                            </h2>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 font-medium">Resultado líquido deste mês</p>
+                            <div className="relative z-10">
+                                <div className="flex items-center justify-between mb-2 md:mb-3">
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-xs md:text-sm font-bold uppercase tracking-wider text-white/90">Saldo do Mês</p>
+                                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                                            financialData.currentBalance >= 0 ? 'bg-emerald-500/40 text-emerald-100 border border-emerald-400/40' : 'bg-rose-500/40 text-rose-100 border border-rose-400/40'
+                                        }`}>
+                                            {financialData.currentBalance >= 0 ? 'Positivo' : 'Negativo'}
+                                        </span>
+                                    </div>
+                                    <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm text-white">
+                                        <Wallet size={20} />
+                                    </div>
+                                </div>
+                                <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white mb-1.5">
+                                    {showValues ? formatCurrency(financialData.currentBalance) : 'R$ •••••'}
+                                </h2>
+                                <p className="text-xs text-white/80 font-medium">
+                                    Receitas − Despesas deste mês
+                                </p>
+                            </div>
                         </div>
                     </div>
 
