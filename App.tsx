@@ -959,10 +959,10 @@ const App: React.FC = () => {
                     <MonthSelector />
 
                     {/* Summary Cards - Updated with Rollover Logic */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                         
                         {/* Accumulated Balance (Main) */}
-                        <div className="no-invert bg-slate-900 p-5 md:p-6 rounded-3xl shadow-xl shadow-slate-200 dark:shadow-none text-white relative overflow-hidden group lg:col-span-2">
+                        <div className="no-invert bg-slate-900 p-5 md:p-6 rounded-3xl shadow-xl shadow-slate-200 dark:shadow-none text-white relative overflow-hidden group">
                             <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
                                 <PiggyBank size={80} />
                             </div>
@@ -993,6 +993,18 @@ const App: React.FC = () => {
                                     </div>
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Current Month Balance (Only this month) */}
+                        <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden group">
+                            <div className={`absolute top-4 right-4 p-2 rounded-xl ${financialData.currentBalance >= 0 ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400'}`}>
+                                <Wallet size={24} />
+                            </div>
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 md:mb-3">Saldo do Mês</p>
+                            <h2 className={`text-2xl md:text-3xl font-bold tracking-tight ${financialData.currentBalance >= 0 ? 'text-slate-800 dark:text-white' : 'text-rose-600 dark:text-rose-400'}`}>
+                                {showValues ? formatCurrency(financialData.currentBalance) : 'R$ •••••'}
+                            </h2>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 font-medium">Resultado líquido deste mês</p>
                         </div>
 
                         {/* Current Month Income */}
