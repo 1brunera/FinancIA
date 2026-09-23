@@ -655,50 +655,60 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
                     </button>
                 </div>
                 
-                <div className="space-y-5">
+                <div className="space-y-4">
                     {goals.map(goal => {
                         const progress = (goal.currentAmount / goal.targetAmount) * 100;
                         return (
-                            <div key={goal.id} className="group relative">
-                                <div className="absolute right-0 top-0 flex gap-2">
-                                    <button onClick={() => openGoalModal(goal)} className="p-1 text-slate-400 hover:text-blue-500 transition-colors">
-                                        <Pencil size={14} />
-                                    </button>
-                                    <button onClick={() => onDeleteGoal(goal.id)} className="p-1 text-slate-400 hover:text-red-500 transition-colors">
-                                        <Trash2 size={14} />
-                                    </button>
-                                </div>
-                                <div className="flex justify-between items-end mb-1">
-                                    <div>
-                                        <p className="font-bold text-slate-700 dark:text-slate-200 text-sm">{goal.name}</p>
-                                        <div className="flex flex-wrap items-center gap-2 text-[10px] text-slate-400 mt-1">
-                                            <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">Prazo: {new Date(goal.deadline).toLocaleDateString()}</span>
+                            <div key={goal.id} className="group p-3 -mx-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                                <div className="flex justify-between items-start gap-3 mb-2">
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">{goal.name}</p>
+                                        <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-slate-400 mt-1">
+                                            <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-medium">Prazo: {new Date(goal.deadline).toLocaleDateString()}</span>
                                             {goal.redemptionDate && (
-                                                <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">Resgate: {new Date(goal.redemptionDate).toLocaleDateString()}</span>
+                                                <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-medium">Resgate: {new Date(goal.redemptionDate).toLocaleDateString()}</span>
                                             )}
                                             {goal.period && (
                                                 <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded capitalize">Período: {goal.period.replace('_', ' ')}</span>
                                             )}
                                             {goal.institution && (
-                                                <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">Banco: {goal.institution}</span>
+                                                <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-medium">Banco: {goal.institution}</span>
                                             )}
                                             {goal.profitability && (
                                                 <span className="bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400 px-1.5 py-0.5 rounded font-medium">{goal.profitability}</span>
                                             )}
-                                            <span className="flex items-center gap-0.5 bg-slate-50 dark:bg-slate-950 px-1.5 py-0.5 rounded text-slate-500 dark:text-slate-400">
-                                                <Clock size={8} /> {getRemainingTime(goal.deadline)}
+                                            <span className="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-500 dark:text-slate-400 font-medium">
+                                                <Clock size={9} /> {getRemainingTime(goal.deadline)}
                                             </span>
                                         </div>
                                     </div>
-                                    <div className="text-right">
-                                        <span className="font-bold text-indigo-600 text-sm">{formatCurrency(goal.currentAmount)}</span>
-                                        <span className="text-[10px] text-slate-400 block">de {formatCurrency(goal.targetAmount)}</span>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <div className="text-right">
+                                            <span className="font-bold text-indigo-600 dark:text-indigo-400 text-sm block leading-tight">{formatCurrency(goal.currentAmount)}</span>
+                                            <span className="text-[10px] text-slate-400 block leading-tight mt-0.5">de {formatCurrency(goal.targetAmount)}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 opacity-70 sm:opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm rounded-lg p-1 ml-1">
+                                            <button 
+                                                onClick={() => openGoalModal(goal)} 
+                                                className="p-1 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors" 
+                                                title="Editar meta"
+                                            >
+                                                <Pencil size={13} />
+                                            </button>
+                                            <button 
+                                                onClick={() => onDeleteGoal(goal.id)} 
+                                                className="p-1 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors" 
+                                                title="Excluir meta"
+                                            >
+                                                <Trash2 size={13} />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                                     <div 
                                         className="h-full bg-indigo-500 rounded-full transition-all duration-1000" 
-                                        style={{ width: `${progress}%` }}
+                                        style={{ width: `${Math.min(progress, 100)}%` }}
                                     ></div>
                                 </div>
                             </div>
