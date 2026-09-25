@@ -1,97 +1,397 @@
-import React from 'react';
-import { Auth } from '@supabase/auth-ui-react';
-import { ThemeSupa } from '@supabase/auth-ui-shared';
+import React, { useState } from 'react';
 import { supabase } from '../services/supabase';
-import { PiggyBank } from 'lucide-react';
+import { 
+  Sparkles, 
+  Mail, 
+  Lock, 
+  User, 
+  Eye, 
+  EyeOff, 
+  ArrowRight, 
+  CheckCircle2, 
+  AlertCircle, 
+  Loader2, 
+  ShieldCheck, 
+  TrendingUp, 
+  ArrowLeft 
+} from 'lucide-react';
 
 export const AuthScreen: React.FC = () => {
-  return (
-    <div className="min-h-screen bg-slate-950 bg-gradient-to-br from-black via-slate-900 to-blue-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md flex flex-col items-center">
-        <h2 className="mt-2 text-center text-4xl font-extrabold tracking-tight">
-          <span className="text-white">Finance</span><span className="text-blue-500">IA</span>
-        </h2>
-        <p className="mt-2 text-center text-sm text-slate-300">
-          O seu assistente pessoal financeiro com IA e fácil de usar.
-        </p>
-      </div>
+  const [mode, setMode] = useState<'signin' | 'signup' | 'forgot_password'>('signin');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  
+  const [loading, setLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white/5 backdrop-blur-md py-8 px-4 shadow-2xl sm:rounded-3xl sm:px-10 border border-white/10">
-          <Auth
-            supabaseClient={supabase}
-            appearance={{
-              theme: ThemeSupa,
-              variables: {
-                default: {
-                  colors: {
-                    brand: '#3b82f6', // blue-500
-                    brandAccent: '#2563eb', // blue-600
-                    brandButtonText: '#ffffff',
-                    defaultButtonBackground: 'transparent',
-                    defaultButtonBackgroundHover: 'rgba(255,255,255,0.1)',
-                    defaultButtonBorder: 'rgba(255,255,255,0.2)',
-                    defaultButtonText: '#ffffff',
-                    inputBackground: 'rgba(0,0,0,0.2)',
-                    inputBorder: 'rgba(255,255,255,0.2)',
-                    inputBorderHover: 'rgba(255,255,255,0.4)',
-                    inputBorderFocus: '#3b82f6',
-                    inputText: '#ffffff',
-                    inputPlaceholder: 'rgba(255,255,255,0.5)',
-                  },
-                },
-              },
-              className: {
-                container: 'w-full font-sans',
-                button: 'rounded-xl font-medium text-white',
-                input: 'rounded-xl text-white',
-                label: 'text-white/90 font-medium',
-                anchor: 'text-blue-400 hover:text-blue-300',
-                message: 'text-white/90',
-                divider: 'bg-white/20',
-              }
-            }}
-            providers={['google']}
-            localization={{
-              variables: {
-                sign_in: {
-                  email_label: 'Endereço de e-mail',
-                  password_label: 'Senha',
-                  email_input_placeholder: 'Seu e-mail',
-                  password_input_placeholder: 'Sua senha',
-                  button_label: 'Entrar',
-                  loading_button_label: 'Entrando...',
-                  social_provider_text: 'Entrar com {{provider}}',
-                  link_text: 'Já tem uma conta? Entre',
-                },
-                sign_up: {
-                  email_label: 'Endereço de e-mail',
-                  password_label: 'Crie uma senha',
-                  email_input_placeholder: 'Seu e-mail',
-                  password_input_placeholder: 'Sua senha',
-                  button_label: 'Cadastrar',
-                  loading_button_label: 'Cadastrando...',
-                  social_provider_text: 'Cadastrar com {{provider}}',
-                  link_text: 'Não tem uma conta? Cadastre-se',
-                },
-                forgotten_password: {
-                  link_text: 'Esqueceu sua senha?',
-                  email_label: 'Endereço de e-mail',
-                  password_label: 'Sua senha',
-                  email_input_placeholder: 'Seu e-mail',
-                  button_label: 'Enviar instruções',
-                  loading_button_label: 'Enviando...',
-                  confirmation_text: 'Verifique seu e-mail para redefinir a senha',
-                },
-              },
-            }}
-          />
+  const clearMessages = () => {
+    setErrorMsg(null);
+    setSuccessMsg(null);
+  };
+
+  const handleModeChange = (newMode: 'signin' | 'signup' | 'forgot_password') => {
+    clearMessages();
+    setMode(newMode);
+  };
+
+  // Google OAuth Login
+  const handleGoogleLogin = async () => {
+    clearMessages();
+    setSocialLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+        }
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      console.error('Google OAuth error:', err);
+      setErrorMsg(err?.message || 'Erro ao conectar com o Google. Tente novamente.');
+      setSocialLoading(false);
+    }
+  };
+
+  // Email / Password submission
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    clearMessages();
+
+    if (!email) {
+      setErrorMsg('Por favor, informe seu endereço de e-mail.');
+      return;
+    }
+
+    if (mode !== 'forgot_password' && !password) {
+      setErrorMsg('Por favor, informe sua senha.');
+      return;
+    }
+
+    if (mode === 'signup' && password.length < 6) {
+      setErrorMsg('A senha deve conter no mínimo 6 caracteres.');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      if (mode === 'signin') {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+        if (error) throw error;
+      } else if (mode === 'signup') {
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: {
+            data: {
+              full_name: name.trim() || undefined,
+            },
+          },
+        });
+        if (error) throw error;
+        
+        if (data?.session) {
+          setSuccessMsg('Conta criada com sucesso! Entrando...');
+        } else {
+          setSuccessMsg('Conta criada com sucesso! Verifique seu e-mail para confirmar seu cadastro se necessário.');
+        }
+      } else if (mode === 'forgot_password') {
+        const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+          redirectTo: window.location.origin,
+        });
+        if (error) throw error;
+        setSuccessMsg('Enviamos um link de recuperação para o seu e-mail. Verifique sua caixa de entrada.');
+      }
+    } catch (err: any) {
+      console.error('Auth action error:', err);
+      let message = err?.message || 'Ocorreu um erro. Tente novamente.';
+      
+      // User-friendly Portuguese translation for common Supabase auth messages
+      if (message.includes('Invalid login credentials')) {
+        message = 'E-mail ou senha incorretos. Verifique seus dados.';
+      } else if (message.includes('User already registered')) {
+        message = 'Este e-mail já está cadastrado. Tente entrar.';
+      } else if (message.includes('Password should be at least 6 characters')) {
+        message = 'A senha precisa ter pelo menos 6 caracteres.';
+      } else if (message.includes('Email not confirmed')) {
+        message = 'E-mail ainda não confirmado. Verifique sua caixa de entrada.';
+      }
+
+      setErrorMsg(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-[100dvh] w-full bg-[#070b14] bg-radial-gradient flex flex-col justify-between items-center p-4 sm:p-6 md:p-8 font-sans text-slate-100 relative overflow-x-hidden selection:bg-blue-500 selection:text-white">
+      {/* Dynamic Background Glows */}
+      <div className="fixed top-[-15%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-blue-600/15 blur-[120px] pointer-events-none" />
+      <div className="fixed bottom-[-15%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-indigo-600/15 blur-[130px] pointer-events-none" />
+      <div className="fixed top-[40%] right-[15%] w-[35vw] h-[35vw] rounded-full bg-emerald-500/10 blur-[140px] pointer-events-none" />
+
+      {/* Main Container */}
+      <div className="w-full max-w-md my-auto relative z-10 flex flex-col items-center">
+        {/* Brand Header */}
+        <div className="flex flex-col items-center text-center mb-6 sm:mb-8">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-4 shadow-inner">
+            <Sparkles size={14} className="text-blue-400 animate-pulse" />
+            <span className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider">
+              Finanças Inteligentes com IA
+            </span>
+          </div>
+          
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+            <span className="text-white">Finance</span>
+            <span className="bg-gradient-to-r from-blue-400 via-indigo-400 to-cyan-400 bg-clip-text text-transparent">IA</span>
+          </h1>
+          <p className="mt-2 text-xs sm:text-sm text-slate-400 max-w-xs leading-relaxed">
+            Seu assistente financeiro completo para controle de receitas, despesas, cartões e investimentos.
+          </p>
+        </div>
+
+        {/* Card */}
+        <div className="w-full bg-slate-900/80 backdrop-blur-2xl border border-slate-800/90 shadow-[0_20px_50px_rgba(0,0,0,0.6)] rounded-3xl p-5 sm:p-8 transition-all">
+          {mode !== 'forgot_password' ? (
+            <>
+              {/* Tabs Switcher */}
+              <div className="flex bg-slate-950/60 p-1 rounded-2xl border border-slate-800/80 mb-6">
+                <button
+                  type="button"
+                  onClick={() => handleModeChange('signin')}
+                  className={`flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all ${
+                    mode === 'signin'
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-900/30'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  Entrar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleModeChange('signup')}
+                  className={`flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all ${
+                    mode === 'signup'
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-900/30'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  Criar Conta
+                </button>
+              </div>
+
+              {/* Social Login Button */}
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                disabled={socialLoading || loading}
+                className="w-full py-3 px-4 bg-white hover:bg-slate-100 active:scale-[0.99] text-slate-800 font-semibold rounded-2xl transition-all flex items-center justify-center gap-3 shadow-md disabled:opacity-60 cursor-pointer text-sm"
+              >
+                {socialLoading ? (
+                  <Loader2 size={18} className="animate-spin text-slate-700" />
+                ) : (
+                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
+                    <path
+                      fill="#4285F4"
+                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                    />
+                    <path
+                      fill="#EA4335"
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                    />
+                  </svg>
+                )}
+                <span>Continuar com o Google</span>
+              </button>
+
+              {/* Divider */}
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-slate-800" />
+                </div>
+                <div className="relative flex justify-center text-xs">
+                  <span className="bg-slate-900 px-3 text-slate-500 font-medium">
+                    ou continue com e-mail
+                  </span>
+                </div>
+              </div>
+            </>
+          ) : (
+            /* Forgot password header */
+            <div className="mb-6">
+              <button
+                type="button"
+                onClick={() => handleModeChange('signin')}
+                className="inline-flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 font-bold mb-3 transition-colors cursor-pointer"
+              >
+                <ArrowLeft size={14} /> Voltar para o login
+              </button>
+              <h2 className="text-lg sm:text-xl font-bold text-white">Recuperar Senha</h2>
+              <p className="text-xs text-slate-400 mt-1">
+                Informe o seu e-mail para receber as instruções de redefinição.
+              </p>
+            </div>
+          )}
+
+          {/* Alert Messages */}
+          {errorMsg && (
+            <div className="mb-5 p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-2xl flex items-start gap-2.5 text-xs text-rose-300 animate-fade-in">
+              <AlertCircle size={16} className="text-rose-400 shrink-0 mt-0.5" />
+              <span className="leading-relaxed">{errorMsg}</span>
+            </div>
+          )}
+
+          {successMsg && (
+            <div className="mb-5 p-3.5 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-start gap-2.5 text-xs text-emerald-300 animate-fade-in">
+              <CheckCircle2 size={16} className="text-emerald-400 shrink-0 mt-0.5" />
+              <span className="leading-relaxed">{successMsg}</span>
+            </div>
+          )}
+
+          {/* Main Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {mode === 'signup' && (
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                  Nome Completo
+                </label>
+                <div className="relative">
+                  <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                  <input
+                    type="text"
+                    required
+                    placeholder="Seu nome"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-slate-950/70 border border-slate-800 rounded-2xl text-slate-100 placeholder:text-slate-600 text-sm font-medium focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition-all"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                Endereço de E-mail
+              </label>
+              <div className="relative">
+                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                <input
+                  type="email"
+                  required
+                  autoComplete="email"
+                  placeholder="seu@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 bg-slate-950/70 border border-slate-800 rounded-2xl text-slate-100 placeholder:text-slate-600 text-sm font-medium focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition-all"
+                />
+              </div>
+            </div>
+
+            {mode !== 'forgot_password' && (
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">
+                    Senha
+                  </label>
+                  {mode === 'signin' && (
+                    <button
+                      type="button"
+                      onClick={() => handleModeChange('forgot_password')}
+                      className="text-[11px] text-blue-400 hover:text-blue-300 font-semibold transition-colors cursor-pointer"
+                    >
+                      Esqueceu sua senha?
+                    </button>
+                  )}
+                </div>
+                <div className="relative">
+                  <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+                    placeholder={mode === 'signup' ? 'Crie uma senha forte (mín. 6)' : 'Sua senha'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pl-10 pr-11 py-3 bg-slate-950/70 border border-slate-800 rounded-2xl text-slate-100 placeholder:text-slate-600 text-sm font-medium focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 p-1 rounded-lg transition-colors cursor-pointer"
+                    title={showPassword ? 'Ocultar senha' : 'Ver senha'}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={loading || socialLoading}
+              className="w-full py-3.5 px-4 mt-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 active:scale-[0.99] text-white font-bold rounded-2xl shadow-lg shadow-blue-600/25 flex items-center justify-center gap-2 transition-all disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer text-sm"
+            >
+              {loading ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  <span>Processando...</span>
+                </>
+              ) : mode === 'signin' ? (
+                <>
+                  <span>Entrar na Conta</span>
+                  <ArrowRight size={16} />
+                </>
+              ) : mode === 'signup' ? (
+                <>
+                  <span>Criar Minha Conta</span>
+                  <ArrowRight size={16} />
+                </>
+              ) : (
+                <>
+                  <span>Enviar Link de Recuperação</span>
+                  <ArrowRight size={16} />
+                </>
+              )}
+            </button>
+          </form>
+        </div>
+
+        {/* Security / Privacy Trust Badge */}
+        <div className="flex items-center gap-2 text-slate-500 text-[11px] mt-6">
+          <ShieldCheck size={14} className="text-emerald-500 shrink-0" />
+          <span>Seus dados são criptografados com padrão bancário de segurança.</span>
         </div>
       </div>
 
-      <div className="mt-8 text-center text-sm text-slate-400">
-        Criado por <a href="https://www.linkedin.com/in/brunosergiosilva/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors font-medium">Bruno Sergio</a>
-      </div>
+      {/* Footer */}
+      <footer className="w-full text-center text-xs text-slate-500 py-4 relative z-10">
+        Desenvolvido por{' '}
+        <a
+          href="https://www.linkedin.com/in/brunosergiosilva/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-400 hover:text-blue-300 font-semibold transition-colors"
+        >
+          Bruno Sergio
+        </a>
+      </footer>
     </div>
   );
 };

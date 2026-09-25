@@ -485,79 +485,128 @@ export const InvestmentsDashboard: React.FC<InvestmentsDashboardProps> = ({
              </div>
         )}
 
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Meus Investimentos</h2>
-            <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 md:gap-4">
+            <div>
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white">Meus Investimentos</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Acompanhe patrimônio, metas e reserva de emergência</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
                 <button 
                     onClick={() => openGoalModal()}
-                    className="bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 px-4 py-2 rounded-xl text-sm font-bold hover:bg-primary-200 dark:hover:bg-primary-900/50 transition-all flex items-center gap-2"
+                    className="flex-1 sm:flex-initial bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300 border border-primary-200 dark:border-primary-800/60 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold hover:bg-primary-100 dark:hover:bg-primary-900/60 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs"
                 >
-                    <Target size={18} /> Criar Porquinho
+                    <Target size={16} /> Criar Porquinho
                 </button>
                 <button 
                     onClick={() => openInvModal()}
-                    className="bg-slate-900 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-slate-800 transition-all flex items-center gap-2"
+                    className="flex-1 sm:flex-initial bg-slate-900 text-white dark:bg-blue-600 dark:hover:bg-blue-500 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold hover:bg-slate-800 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-slate-900/10"
                 >
-                    <Plus size={18} /> Adicionar Investimento
+                    <Plus size={16} /> Novo Ativo
                 </button>
             </div>
         </div>
         
         {/* Top Summary */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-slate-900 text-white p-6 rounded-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-6 opacity-10"><TrendingUp size={64} /></div>
-                <p className="text-sm text-slate-400 font-bold uppercase tracking-wider mb-1">Patrimônio Investido</p>
-                <h3 className="text-3xl font-bold">{formatCurrency(totalAssets)}</h3>
-                <div className="mt-4 flex items-center gap-2 text-green-400 text-sm font-bold">
-                    <TrendingUp size={16} /> +12% esse ano (simulado)
+            <div className="bg-slate-900 text-white p-5 sm:p-6 rounded-3xl relative overflow-hidden shadow-xl shadow-slate-900/10 flex flex-col justify-between">
+                <div className="absolute top-0 right-0 p-6 opacity-10"><TrendingUp size={72} /></div>
+                <div>
+                    <p className="text-xs sm:text-sm text-slate-400 font-bold uppercase tracking-wider mb-1.5">Patrimônio Investido</p>
+                    <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight">{formatCurrency(totalAssets)}</h3>
+                </div>
+                <div className="mt-4 flex items-center gap-2 text-emerald-400 text-xs sm:text-sm font-bold bg-emerald-950/40 border border-emerald-800/40 px-3 py-1.5 rounded-xl w-fit">
+                    <TrendingUp size={15} /> +12% rentabilidade média estimada
                 </div>
             </div>
 
             {/* Smart Emergency Fund Widget */}
-            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm md:col-span-2">
-                <div className="flex justify-between items-start mb-4">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                            <ShieldCheck size={24} />
+            <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm md:col-span-2 flex flex-col justify-between">
+                <div>
+                    {/* Top Row: Title & Subtitle + Month Selector */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2.5 bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 rounded-2xl shrink-0">
+                                <ShieldCheck size={24} />
+                            </div>
+                            <div>
+                                <h3 className="text-base sm:text-lg font-bold text-slate-800 dark:text-white leading-snug">Reserva de Emergência</h3>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                    Custo de vida médio: <span className="font-semibold text-slate-700 dark:text-slate-300">{formatCurrency(safeAvgExpense)}/mês</span>
+                                </p>
+                            </div>
                         </div>
-                        <div>
-                            <h3 className="font-bold text-slate-800 dark:text-white">Reserva de Emergência</h3>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">Baseado no seu custo de vida médio ({formatCurrency(safeAvgExpense)}/mês)</p>
+
+                        {/* Month Selector Pill */}
+                        <div className="flex items-center gap-2 self-start sm:self-center">
+                            <span className="text-xs text-slate-400 font-medium hidden lg:inline">Objetivo:</span>
+                            <div className="flex bg-slate-100 dark:bg-slate-800/90 p-1 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+                                {[3, 6, 12].map(m => (
+                                    <button
+                                        key={m}
+                                        onClick={() => setEmergencyMonths(m as any)}
+                                        className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+                                            emergencyMonths === m 
+                                                ? 'bg-white dark:bg-slate-900 shadow-xs text-blue-600 dark:text-blue-400' 
+                                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                                        }`}
+                                    >
+                                        {m} Meses
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </div>
-                    <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
-                        {[3, 6, 12].map(m => (
-                            <button
-                                key={m}
-                                onClick={() => setEmergencyMonths(m as any)}
-                                className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${emergencyMonths === m ? 'bg-white dark:bg-slate-900 shadow text-blue-600' : 'text-slate-500 dark:text-slate-400'}`}
-                            >
-                                {m} Meses
-                            </button>
-                        ))}
+
+                    {/* Values Row */}
+                    <div className="grid grid-cols-2 gap-3 py-3 border-y border-slate-100 dark:border-slate-800/80 my-3">
+                        <div>
+                            <span className="text-xs text-slate-400 block font-medium">Você tem guardado</span>
+                            <span className="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 dark:text-white">
+                                {formatCurrency(liquidityTotal)}
+                            </span>
+                        </div>
+                        <div className="text-right">
+                            <span className="text-xs text-slate-400 block font-medium">Meta ({emergencyMonths} meses)</span>
+                            <span className="text-base sm:text-lg md:text-xl font-extrabold text-blue-600 dark:text-blue-400">
+                                {formatCurrency(emergencyTarget)}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Progress Bar & Percentage */}
+                    <div className="space-y-1.5 mt-2">
+                        <div className="flex justify-between items-center text-xs">
+                            <span className="font-semibold text-slate-500 dark:text-slate-400">Progresso da Reserva</span>
+                            <span className="font-bold text-slate-800 dark:text-slate-200">
+                                {Math.min(emergencyProgress, 100).toFixed(0)}%
+                            </span>
+                        </div>
+                        <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                            <div 
+                                className={`h-full rounded-full transition-all duration-1000 ${
+                                    emergencyProgress >= 100 
+                                        ? 'bg-gradient-to-r from-emerald-500 to-teal-500' 
+                                        : 'bg-gradient-to-r from-blue-500 to-indigo-600'
+                                }`}
+                                style={{ width: `${Math.min(emergencyProgress, 100)}%` }}
+                            />
+                        </div>
                     </div>
                 </div>
 
-                <div className="space-y-2">
-                    <div className="flex justify-between text-sm font-medium">
-                        <span className="text-slate-600 dark:text-slate-300">Você tem: <strong className="text-slate-800 dark:text-white">{formatCurrency(liquidityTotal)}</strong></span>
-                        <span className="text-slate-400">Meta: {formatCurrency(emergencyTarget)}</span>
-                    </div>
-                    <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                        <div 
-                            className={`h-full rounded-full transition-all duration-1000 ${emergencyProgress >= 100 ? 'bg-green-500' : 'bg-blue-500'}`}
-                            style={{ width: `${Math.min(emergencyProgress, 100)}%` }}
-                        ></div>
-                    </div>
-                    <div className="flex justify-between items-center mt-2">
-                        <span className={`text-xs font-bold px-2 py-1 rounded-md ${emergencyProgress >= 100 ? 'bg-green-100 text-green-700' : 'bg-blue-50 text-blue-700'}`}>
-                            {monthsCovered} meses garantidos
-                        </span>
-                        <div className="flex items-center gap-1 text-[10px] text-slate-400">
-                             <AlertTriangle size={12} />
-                             Considerando apenas investimentos com liquidez diária
-                        </div>
+                {/* Footer Badges */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mt-4 pt-2">
+                    <span className={`text-xs font-bold px-3 py-1.5 rounded-xl inline-flex items-center gap-1.5 w-fit ${
+                        emergencyProgress >= 100 
+                            ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800' 
+                            : 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
+                    }`}>
+                        <ShieldCheck size={14} />
+                        {monthsCovered} meses garantidos
+                    </span>
+                    <div className="flex items-center gap-1.5 text-[11px] text-slate-400 dark:text-slate-500">
+                        <AlertTriangle size={13} className="shrink-0 text-amber-500/80" />
+                        <span>Considerando apenas ativos com liquidez diária</span>
                     </div>
                 </div>
             </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Bell, Calendar, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Wallet, Menu, History, PiggyBank, Sun, Moon, CreditCard as CreditCardIcon, Settings2, Eye, EyeOff, FileDown, RotateCw, Trash2, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Plus, Bell, Calendar, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Wallet, Menu, History, PiggyBank, Sun, Moon, CreditCard as CreditCardIcon, Settings2, Eye, EyeOff, FileDown, RotateCw, Trash2, CheckCircle2, AlertTriangle, LayoutDashboard, List } from 'lucide-react';
 import { Transaction, TransactionType, CategoryOption, Bill, CreditCard, IncomeReminder, Investment, InvestmentGoal } from './types';
 import { MOCK_TRANSACTIONS, DEFAULT_CATEGORIES, MOCK_INVESTMENTS, MOCK_GOALS } from './constants';
 import { TransactionForm } from './components/TransactionForm';
@@ -1530,15 +1530,16 @@ const App: React.FC = () => {
         }`}
       >
         {/* Top Header */}
-        <header className="h-16 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
-            <div className="flex items-center gap-3">
+        <header className="h-16 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-slate-200/70 dark:border-slate-800/70 flex items-center justify-between px-3 md:px-8 sticky top-0 z-30">
+            <div className="flex items-center gap-2 md:gap-3">
                 <button 
                     onClick={() => setIsMobileSidebarOpen(true)}
-                    className="md:hidden p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-800 rounded-lg"
+                    className="md:hidden p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                    title="Menu"
                 >
-                    <Menu size={24} />
+                    <Menu size={22} />
                 </button>
-                <h1 className="font-bold text-slate-800 dark:text-white text-lg capitalize truncate max-w-[200px] md:max-w-none">
+                <h1 className="font-bold text-slate-800 dark:text-white text-base md:text-lg capitalize truncate max-w-[170px] sm:max-w-xs md:max-w-none">
                     {activeView === 'credit-cards' ? 'Cartões' : 
                     activeView === 'ai-advisor' ? 'Consultor IA' : 
                     activeView === 'categories' ? 'Categorias' :
@@ -1553,20 +1554,20 @@ const App: React.FC = () => {
                     <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
                         {now.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }).replace(':', 'h')}
                     </span>
-                    <button
-                        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                        className="p-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                        title="Alternar tema"
-                    >
-                        {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-                    </button>
                 </div>
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 md:gap-2">
+                <button
+                    onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                    className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-800 transition-colors cursor-pointer"
+                    title="Alternar tema claro/escuro"
+                >
+                    {theme === 'dark' ? <Sun size={17} className="text-amber-400" /> : <Moon size={17} className="text-slate-600" />}
+                </button>
                 <button
                     onClick={handleReloadPage}
-                    className="p-2 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-xl border border-slate-200/80 dark:border-slate-800 transition-all shadow-xs flex items-center gap-1.5 text-xs font-semibold"
+                    className="p-2 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-xl border border-slate-200/80 dark:border-slate-800 transition-all shadow-xs flex items-center gap-1.5 text-xs font-semibold cursor-pointer"
                     title="Recarregar a página"
                 >
                     <RotateCw size={15} className="text-blue-500" />
@@ -1576,25 +1577,78 @@ const App: React.FC = () => {
         </header>
 
         {/* Dynamic Content */}
-        <main className="p-4 md:p-8 pb-8 max-w-7xl mx-auto w-full flex-1">
+        <main className="p-3.5 sm:p-5 md:p-8 pb-24 md:pb-8 max-w-7xl mx-auto w-full flex-1">
             {renderContent()}
         </main>
 
         {/* Global Footer */}
-        <footer className="w-full py-6 mt-auto border-t border-slate-200 dark:border-slate-700 dark:border-slate-800 text-center text-sm text-slate-500 dark:text-slate-400">
+        <footer className="w-full py-6 mt-auto border-t border-slate-200 dark:border-slate-700 dark:border-slate-800 text-center text-xs md:text-sm text-slate-500 dark:text-slate-400">
             Criado por <a href="https://www.linkedin.com/in/brunosergiosilva/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors font-medium">Bruno Sergio</a>
         </footer>
       </div>
 
-      {/* Mobile Sticky FAB */}
-      {(activeView === 'dashboard' || activeView === 'transactions') && (
+      {/* Mobile Bottom Navigation Bar */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200/80 dark:border-slate-800/80 px-2 py-1.5 flex items-center justify-around shadow-[0_-4px_25px_rgba(0,0,0,0.1)]">
         <button
-            onClick={() => setIsFormOpen(true)}
-            className="no-invert md:hidden fixed bottom-6 right-6 bg-slate-900 text-white w-14 h-14 rounded-full shadow-2xl shadow-slate-900/40 flex items-center justify-center z-50 transition-transform active:scale-95"
+          onClick={() => setActiveView('dashboard')}
+          className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all cursor-pointer ${
+            activeView === 'dashboard'
+              ? 'text-blue-600 dark:text-blue-400 font-bold scale-105'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
+          }`}
         >
-            <Plus size={28} />
+          <LayoutDashboard size={20} />
+          <span className="text-[10px]">Início</span>
         </button>
-      )}
+
+        <button
+          onClick={() => setActiveView('transactions')}
+          className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all cursor-pointer ${
+            activeView === 'transactions'
+              ? 'text-blue-600 dark:text-blue-400 font-bold scale-105'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
+          }`}
+        >
+          <List size={20} />
+          <span className="text-[10px]">Extrato</span>
+        </button>
+
+        {/* Central Add Button */}
+        <button
+          onClick={() => {
+            setEditingTransaction(null);
+            setIsFormOpen(true);
+          }}
+          className="flex flex-col items-center justify-center -mt-5 bg-gradient-to-tr from-blue-600 via-indigo-600 to-blue-500 text-white w-12 h-12 rounded-full shadow-lg shadow-blue-600/40 active:scale-95 transition-all border-2 border-white dark:border-slate-900 cursor-pointer"
+          title="Nova transação"
+        >
+          <Plus size={24} />
+        </button>
+
+        <button
+          onClick={() => setActiveView('investments')}
+          className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all cursor-pointer ${
+            activeView === 'investments'
+              ? 'text-blue-600 dark:text-blue-400 font-bold scale-105'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
+          }`}
+        >
+          <TrendingUp size={20} />
+          <span className="text-[10px]">Investir</span>
+        </button>
+
+        <button
+          onClick={() => setIsMobileSidebarOpen(true)}
+          className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all cursor-pointer ${
+            ['bills', 'income-reminders', 'credit-cards', 'categories', 'ai-advisor', 'settings'].includes(activeView)
+              ? 'text-blue-600 dark:text-blue-400 font-bold'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
+          }`}
+        >
+          <Menu size={20} />
+          <span className="text-[10px]">Menu</span>
+        </button>
+      </nav>
 
       {/* Form Modal */}
       {(isFormOpen || editingTransaction) && (
