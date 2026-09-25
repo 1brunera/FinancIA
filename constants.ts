@@ -6,6 +6,7 @@ export const EXPENSE_CATEGORIES: CategoryOption[] = [
   { id: 'transporte', label: 'Transporte', color: '#f59e0b', budgetGroup: 'needs' }, // Essencial
   { id: 'saude', label: 'Saúde', color: '#10b981', budgetGroup: 'needs' }, // Essencial
   { id: 'educacao', label: 'Educação', color: '#06b6d4', budgetGroup: 'needs' }, // Essencial
+  { id: 'pensao_alimenticia', label: 'Pensão Alimentícia', color: '#0284c7', budgetGroup: 'needs' }, // Essencial
   
   { id: 'lazer', label: 'Lazer', color: '#8b5cf6', budgetGroup: 'wants' }, // Desejo/Estilo de vida
   { id: 'compras', label: 'Compras', color: '#ec4899', budgetGroup: 'wants' }, // Desejo
@@ -20,6 +21,7 @@ export const EXPENSE_CATEGORIES: CategoryOption[] = [
 
 export const INCOME_CATEGORIES: CategoryOption[] = [
   { id: 'salario', label: 'Salário', color: '#22c55e', budgetGroup: 'none' }, 
+  { id: 'pensao_recebida', label: 'Pensão Alimentícia', color: '#059669', budgetGroup: 'none' },
   { id: 'comissoes', label: 'Comissões', color: '#10b981', budgetGroup: 'none' },
   { id: 'servicos', label: 'Prestação de Serviços', color: '#0ea5e9', budgetGroup: 'none' }, 
   { id: 'dividendos', label: 'Dividendos', color: '#8b5cf6', budgetGroup: 'none' }, 

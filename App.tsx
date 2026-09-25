@@ -290,7 +290,26 @@ const App: React.FC = () => {
           if (txs.length > 0) setTransactions(txs);
           
           const cats = await db.getCategories();
-          if (cats.length > 0) setCategories(cats);
+          if (cats.length > 0) {
+            const merged = [...cats];
+            DEFAULT_CATEGORIES.forEach(defCat => {
+              if (!merged.some(c => c.id === defCat.id)) {
+                merged.push(defCat);
+              }
+            });
+            setCategories(merged);
+          } else {
+            setCategories(prev => {
+              const customExisting = prev.filter(p => p.isCustom);
+              const merged = [...customExisting];
+              DEFAULT_CATEGORIES.forEach(defCat => {
+                if (!merged.some(c => c.id === defCat.id)) {
+                  merged.push(defCat);
+                }
+              });
+              return merged;
+            });
+          }
           
           const cards = await db.getCreditCards();
           if (cards.length > 0) setCreditCards(cards);
@@ -315,6 +334,17 @@ const App: React.FC = () => {
         }
       };
       loadData();
+
+      // Refresh on tab focus
+      const handleFocus = () => loadData();
+      window.addEventListener('focus', handleFocus);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') loadData();
+      });
+
+      return () => {
+        window.removeEventListener('focus', handleFocus);
+      };
     }
   }, [session]);
 
@@ -665,8 +695,9 @@ const App: React.FC = () => {
     });
   };
 
-  const handleAddCreditCard = (newCard: Omit<CreditCard, 'id'>) => {
+  const handleAddCreditCard = async (newCard: Omit<CreditCard, 'id'>) => {
     const card: CreditCard = { ...newCard, id: crypto.randomUUID() };
+    if (session) await db.addCreditCard(card, session.user.id);
     setCreditCards(prev => [...prev, card]);
   };
 
