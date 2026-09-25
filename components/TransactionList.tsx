@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2, ArrowUpCircle, ArrowDownCircle, CreditCard, Banknote, ChevronDown, Pencil } from 'lucide-react';
+import { Trash2, ArrowUpCircle, ArrowDownCircle, CreditCard, Banknote, ChevronDown, Pencil, Search, X } from 'lucide-react';
 import { Transaction, TransactionType, CategoryOption, CreditCard as CreditCardType, TransactionStatus } from '../types';
 
 interface TransactionListProps {
@@ -15,6 +15,7 @@ interface TransactionListProps {
 }
 
 export const TransactionList: React.FC<TransactionListProps> = ({ transactions, onDelete, onEdit, onUpdateStatus, categories, creditCards, showValues = true, hidePaymentMethodFilter = false, showInstallmentFilter = false }) => {
+  const [searchTerm, setSearchTerm] = useState('');
   const [filterPayment, setFilterPayment] = useState<string>('all');
   const [filterInstallment, setFilterInstallment] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -64,7 +65,16 @@ export const TransactionList: React.FC<TransactionListProps> = ({ transactions, 
           passStatus = t.status === filterStatus;
       }
 
-      return passPayment && passInstallment && passStatus;
+      let passSearch = true;
+      if (searchTerm.trim()) {
+          const term = searchTerm.toLowerCase().trim();
+          const descMatch = t.description.toLowerCase().includes(term);
+          const catLabel = getCategoryLabel(t.category).toLowerCase();
+          const catMatch = catLabel.includes(term);
+          passSearch = descMatch || catMatch;
+      }
+
+      return passPayment && passInstallment && passStatus && passSearch;
   });
 
   if (transactions.length === 0) {
@@ -89,7 +99,28 @@ export const TransactionList: React.FC<TransactionListProps> = ({ transactions, 
             </span>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto items-stretch sm:items-center flex-wrap">
+            {/* Real-time Search Input */}
+            <div className="relative w-full sm:w-60">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <input 
+                    type="text"
+                    placeholder="Buscar por descrição..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-8 pr-7 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium rounded-xl outline-none focus:ring-2 focus:ring-primary-500 transition-all placeholder:text-slate-400"
+                />
+                {searchTerm && (
+                    <button
+                        onClick={() => setSearchTerm('')}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded cursor-pointer"
+                        title="Limpar busca"
+                    >
+                        <X size={13} />
+                    </button>
+                )}
+            </div>
+
             {/* Status Filter */}
             <select
                 value={filterStatus}

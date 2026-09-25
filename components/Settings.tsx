@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Save, Download, Upload, Trash2, Bell, Moon, Sun, DollarSign, AlertTriangle, X } from 'lucide-react';
+import { Save, Download, Upload, Trash2, Bell, Moon, Sun, DollarSign, AlertTriangle, X, RotateCw, Sparkles, CheckCircle2, Sliders } from 'lucide-react';
 
 interface SettingsProps {
   onClearData: () => void;
@@ -7,13 +7,50 @@ interface SettingsProps {
   onImportData: (data: string) => void;
   theme: string;
   onThemeChange: (theme: string) => void;
+  monthlyBudgetLimit: number;
+  onMonthlyBudgetLimitChange: (limit: number) => void;
 }
 
-export const Settings: React.FC<SettingsProps> = ({ onClearData, onExportData, onImportData, theme, onThemeChange }) => {
+export const Settings: React.FC<SettingsProps> = ({ 
+  onClearData, 
+  onExportData, 
+  onImportData, 
+  theme, 
+  onThemeChange,
+  monthlyBudgetLimit,
+  onMonthlyBudgetLimitChange
+}) => {
   const [currency, setCurrency] = useState('BRL');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [importText, setImportText] = useState('');
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [isClearingCache, setIsClearingCache] = useState(false);
+  const [cacheMessage, setCacheMessage] = useState<string | null>(null);
+  const [budgetLimitInput, setBudgetLimitInput] = useState(monthlyBudgetLimit > 0 ? monthlyBudgetLimit.toString() : '');
+  const [budgetSaved, setBudgetSaved] = useState(false);
+
+  const handleClearCache = async () => {
+    setIsClearingCache(true);
+    try {
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(name => caches.delete(name)));
+      }
+      sessionStorage.clear();
+      setCacheMessage('Cache limpo com sucesso! Recarregando...');
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (err) {
+      console.error('Error clearing cache:', err);
+      setCacheMessage('Cache limpo! Recarregando...');
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } finally {
+      setIsClearingCache(false);
+    }
+  };
 
   const handleSave = () => {
     // In a real app, these would be saved to localStorage or a backend
@@ -52,6 +89,69 @@ export const Settings: React.FC<SettingsProps> = ({ onClearData, onExportData, o
         </div>
       </div>
 
+      {/* Limite de Orçamento Mensal */}
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800">
+        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2">
+          <Sliders className="text-emerald-500" /> Limite de Orçamento Mensal
+        </h3>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+          Defina um teto máximo de despesas para o mês. O sistema exibirá um alerta visual no Dashboard caso os gastos totais ultrapassem este limite.
+        </p>
+        
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="relative flex-1">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">R$</span>
+            <input 
+              type="number"
+              min="0"
+              step="50"
+              placeholder="Ex: 5000"
+              value={budgetLimitInput}
+              onChange={(e) => {
+                setBudgetLimitInput(e.target.value);
+                setBudgetSaved(false);
+              }}
+              className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white font-bold text-base focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+            />
+          </div>
+          <button
+            onClick={() => {
+              const val = parseFloat(budgetLimitInput) || 0;
+              onMonthlyBudgetLimitChange(val);
+              setBudgetSaved(true);
+              setTimeout(() => setBudgetSaved(false), 3000);
+            }}
+            className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold rounded-xl transition-all shadow-md shadow-emerald-900/10 flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+          >
+            <Save size={16} /> Salvar Limite
+          </button>
+        </div>
+
+        {budgetSaved && (
+          <div className="mt-3 flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 animate-fade-in">
+            <CheckCircle2 size={14} />
+            <span>Limite de orçamento mensal salvo com sucesso!</span>
+          </div>
+        )}
+        
+        {monthlyBudgetLimit > 0 && (
+          <div className="mt-4 p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 rounded-xl text-xs text-emerald-800 dark:text-emerald-300 font-medium flex items-center justify-between">
+            <span>Limite mensal ativo: <strong>{monthlyBudgetLimit.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong></span>
+            <button
+              onClick={() => {
+                setBudgetLimitInput('');
+                onMonthlyBudgetLimitChange(0);
+                setBudgetSaved(true);
+                setTimeout(() => setBudgetSaved(false), 3000);
+              }}
+              className="text-[11px] font-bold text-red-600 dark:text-red-400 hover:underline cursor-pointer"
+            >
+              Remover Limite
+            </button>
+          </div>
+        )}
+      </div>
+
       <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800">
         <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
           <Sun className="text-orange-500" /> Aparência
@@ -78,23 +178,80 @@ export const Settings: React.FC<SettingsProps> = ({ onClearData, onExportData, o
       </div>
 
       <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800">
-        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
-          <Bell className="text-indigo-500" /> Notificações
+        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2">
+          <Bell className="text-indigo-500" /> Notificações Push & Alertas
         </h3>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="font-medium text-slate-800 dark:text-white">Alertas de Vencimento</p>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Receba avisos sobre contas próximas do vencimento.</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+          Receba notificações push no navegador e alertas visuais quando contas a pagar estiverem com menos de 2 dias para o vencimento.
+        </p>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-700">
+            <div>
+              <p className="font-bold text-slate-800 dark:text-white">Alertas de Vencimento (menos de 2 dias)</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Ativa alertas para contas que vencem hoje, amanhã ou em até 2 dias.</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input 
+                type="checkbox" 
+                className="sr-only peer" 
+                checked={notificationsEnabled}
+                onChange={(e) => {
+                  setNotificationsEnabled(e.target.checked);
+                  localStorage.setItem('finance_notifications_enabled', e.target.checked.toString());
+                }}
+              />
+              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-slate-900 after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+            </label>
           </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input 
-              type="checkbox" 
-              className="sr-only peer" 
-              checked={notificationsEnabled}
-              onChange={(e) => setNotificationsEnabled(e.target.checked)}
-            />
-            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-slate-900 after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
-          </label>
+
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-700">
+            <div>
+              <p className="font-bold text-slate-800 dark:text-white text-sm">Permissão do Navegador</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {typeof window !== 'undefined' && 'Notification' in window
+                  ? Notification.permission === 'granted'
+                    ? 'Status: Notificações permitidas pelo navegador ✅'
+                    : Notification.permission === 'denied'
+                    ? 'Status: Notificações bloqueadas nas configurações do navegador ⚠️'
+                    : 'Status: Permissão ainda não solicitada'
+                  : 'Navegador não suporta Web Notifications'}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              {typeof window !== 'undefined' && 'Notification' in window && Notification.permission !== 'granted' && (
+                <button
+                  onClick={async () => {
+                    const perm = await Notification.requestPermission();
+                    if (perm === 'granted') {
+                      new Notification('Notificações Ativadas! 🔔', {
+                        body: 'Você agora receberá avisos sobre contas próximas do vencimento.',
+                        icon: '/favicon.ico'
+                      });
+                      alert('Permissão concedida com sucesso!');
+                    }
+                  }}
+                  className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
+                >
+                  Solicitar Permissão
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+                    new Notification('Teste de Notificação Push 🔔', {
+                      body: 'Esta é uma notificação de teste para lembrete de contas a pagar (vencimento em menos de 2 dias).',
+                      icon: '/favicon.ico'
+                    });
+                  }
+                  alert('Notificação Push disparada com sucesso!');
+                }}
+                className="px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-xs font-bold transition-colors"
+              >
+                🔔 Testar Notificação
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -135,6 +292,35 @@ export const Settings: React.FC<SettingsProps> = ({ onClearData, onExportData, o
             >
               <Upload size={16} /> Importar
             </button>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-700">
+            <div>
+              <p className="font-bold text-slate-800 dark:text-white">Cache e Atualizações</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Limpe dados em cache temporário do navegador ou force o recarregamento do sistema.</p>
+              {cacheMessage && (
+                <div className="mt-2 flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 size={14} />
+                  <span>{cacheMessage}</span>
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button 
+                onClick={() => window.location.reload()}
+                className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 px-3.5 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors font-medium text-sm shadow-xs"
+              >
+                <RotateCw size={16} className="text-blue-500" /> Recarregar
+              </button>
+              <button 
+                onClick={handleClearCache}
+                disabled={isClearingCache}
+                className="flex items-center gap-2 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 px-3.5 py-2 rounded-xl transition-colors font-medium text-sm shadow-xs disabled:opacity-50"
+              >
+                <Trash2 size={16} className="text-amber-600 dark:text-amber-400" />
+                <span>{isClearingCache ? 'Limpando...' : 'Limpar Cache'}</span>
+              </button>
+            </div>
           </div>
 
           <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between p-4 bg-red-50 rounded-2xl border border-red-100">

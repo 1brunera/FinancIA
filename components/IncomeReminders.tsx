@@ -19,7 +19,7 @@ export const IncomeReminders: React.FC<IncomeRemindersProps> = ({ incomes, onAdd
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   
   // Filters
-  const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'received'>('pending');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'received'>('all');
   const [periodFilter, setPeriodFilter] = useState<'all' | 'week' | 'month' | 'year'>('all');
   
   // Form State
@@ -217,10 +217,54 @@ export const IncomeReminders: React.FC<IncomeRemindersProps> = ({ incomes, onAdd
     );
   };
 
+  // Summary totals based on current list
+  const totalAmount = incomes.reduce((sum, i) => sum + i.amount, 0);
+  const pendingAmount = incomes.filter(i => !i.isReceived).reduce((sum, i) => sum + i.amount, 0);
+  const receivedAmount = incomes.filter(i => i.isReceived).reduce((sum, i) => sum + i.amount, 0);
+
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden mb-8">
-      {/* Header with Controls */}
-      <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex flex-col xl:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-900">
+    <div className="space-y-4 mb-8">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Previsto</p>
+          <p className="text-xl md:text-2xl font-bold text-slate-800 dark:text-white">
+            {formatCurrency(totalAmount)}
+          </p>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+            {incomes.length} {incomes.length === 1 ? 'receita cadastrada' : 'receitas cadastradas'}
+          </span>
+        </div>
+
+        <div className="bg-emerald-50/80 dark:bg-emerald-950/30 p-4 rounded-2xl border border-emerald-200/60 dark:border-emerald-800/50 shadow-sm">
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">A Entrar (Pendente)</p>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-200/60 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200">
+              Saldo a Receber
+            </span>
+          </div>
+          <p className="text-xl md:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
+            {formatCurrency(pendingAmount)}
+          </p>
+          <span className="text-[11px] text-emerald-700/80 dark:text-emerald-300/80 font-medium">
+            Vai entrar no mês ainda
+          </span>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Já Recebido</p>
+          <p className="text-xl md:text-2xl font-bold text-slate-700 dark:text-slate-200">
+            {formatCurrency(receivedAmount)}
+          </p>
+          <span className="text-[11px] text-green-600 dark:text-green-400 font-medium">
+            {incomes.filter(i => i.isReceived).length} recebimentos confirmados
+          </span>
+        </div>
+      </div>
+
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
+        {/* Header with Controls */}
+        <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex flex-col xl:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-900">
         <div className="flex items-center gap-3">
              <div className="p-2 bg-green-50 rounded-lg text-green-600">
                 <ArrowUpCircle size={24} />
@@ -515,6 +559,7 @@ export const IncomeReminders: React.FC<IncomeRemindersProps> = ({ incomes, onAdd
             </div>
         )}
       </div>
+    </div>
     </div>
   );
 };

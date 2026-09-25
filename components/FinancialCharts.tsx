@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { Transaction, TransactionType, CategoryOption, CreditCard } from '../types';
-import { Settings, Info, Edit3, CreditCard as CreditCardIcon, AlertTriangle } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { Transaction, TransactionType, CategoryOption, CreditCard, Bill, IncomeReminder } from '../types';
+import { Settings, Info, Edit3, CreditCard as CreditCardIcon, AlertTriangle, TrendingUp } from 'lucide-react';
 
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '../services/supabase';
@@ -11,6 +11,10 @@ interface FinancialChartsProps {
   categories: CategoryOption[];
   monthlyIncome: number; // Recebendo a renda mensal para basear o orçamento
   creditCards: CreditCard[];
+  allTransactions?: Transaction[];
+  currentDate?: Date;
+  bills?: Bill[];
+  incomeReminders?: IncomeReminder[];
   config?: {
     showBudget: boolean;
     showCategoryChart: boolean;
@@ -20,7 +24,19 @@ interface FinancialChartsProps {
   session?: Session | null;
 }
 
-export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, categories, monthlyIncome, creditCards, config = { showBudget: true, showCategoryChart: true, showCardChart: true }, showValues = true, session }) => {
+export const FinancialCharts: React.FC<FinancialChartsProps> = ({ 
+  transactions, 
+  categories, 
+  monthlyIncome, 
+  creditCards, 
+  allTransactions,
+  currentDate,
+  bills,
+  incomeReminders,
+  config = { showBudget: true, showCategoryChart: true, showCardChart: true }, 
+  showValues = true, 
+  session 
+}) => {
   // Estado para o modelo de orçamento
   const [budgetModel, setBudgetModel] = useState<'50/30/20' | '60/20/20' | '70/20/10' | 'custom'>(() => {
     const userMetadata = session?.user?.user_metadata;
@@ -141,6 +157,66 @@ export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, 
       }
       return acc;
     }, [] as { name: string; value: number; cardId: string; color: string }[]);
+
+  // --- Logic for 6-Month Historical Evolution Line Chart ---
+  const historicalData = useMemo(() => {
+    const data = [];
+    const baseDate = currentDate ? new Date(currentDate) : new Date();
+    const allTxs = allTransactions || transactions;
+    
+    // Generate 6 months ending at baseDate
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(baseDate.getFullYear(), baseDate.getMonth() - i, 1);
+      const mYear = d.getFullYear();
+      const mMonth = d.getMonth();
+      const startOfM = new Date(mYear, mMonth, 1);
+      const startOfNextM = new Date(mYear, mMonth + 1, 1);
+      
+      const monthLabel = d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }).replace('.', '');
+      const formattedLabel = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
+
+      // Transactions in this month
+      const txsInMonth = allTxs.filter(t => {
+        const tDate = new Date(t.date);
+        const tDateNormalized = new Date(tDate.getFullYear(), tDate.getMonth(), tDate.getDate());
+        return tDateNormalized >= startOfM && tDateNormalized < startOfNextM;
+      });
+
+      const incomeTxs = txsInMonth
+        .filter(t => t.type === TransactionType.INCOME)
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      const expenseTxs = txsInMonth
+        .filter(t => t.type === TransactionType.EXPENSE && (!t.paymentMethodId || t.paymentMethodId === 'cash'))
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      // Pending items in that month
+      const pendingIncomesInMonth = (incomeReminders || []).filter(inc => {
+        if (inc.isReceived) return false;
+        const iDate = new Date(inc.dueDate + 'T12:00:00');
+        return iDate.getFullYear() === mYear && iDate.getMonth() === mMonth;
+      }).reduce((sum, inc) => sum + inc.amount, 0);
+
+      const pendingBillsInMonth = (bills || []).filter(b => {
+        if (b.isPaid) return false;
+        const bDate = new Date(b.dueDate + 'T12:00:00');
+        return bDate.getFullYear() === mYear && bDate.getMonth() === mMonth;
+      }).reduce((sum, b) => sum + b.amount, 0);
+
+      const totalReceitas = incomeTxs + pendingIncomesInMonth;
+      const totalDespesas = expenseTxs + pendingBillsInMonth;
+      const saldo = totalReceitas - totalDespesas;
+
+      data.push({
+        month: formattedLabel,
+        Receitas: totalReceitas,
+        Despesas: totalDespesas,
+        Saldo: saldo
+      });
+    }
+
+    return data;
+  }, [allTransactions, transactions, currentDate, bills, incomeReminders]);
 
   // --- Logic for Budget Bar Chart ---
   const calculateGroupTotal = (group: 'needs' | 'wants' | 'savings') => {
@@ -485,6 +561,97 @@ export const FinancialCharts: React.FC<FinancialChartsProps> = ({ transactions, 
           </div>
         </div>
       )}
+
+      {/* 6-Month Historical Evolution Line Chart */}
+      <div className="col-span-1 lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+          <div>
+            <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+              <TrendingUp className="text-emerald-500" size={20} /> Evolução Financeira (Últimos 6 Meses)
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Comparativo histórico mensal entre Receitas e Despesas consolidadas
+            </p>
+          </div>
+          <div className="flex items-center gap-4 text-xs font-semibold">
+            <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+              <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block" /> Receitas
+            </span>
+            <span className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400">
+              <span className="w-3 h-3 rounded-full bg-rose-500 inline-block" /> Despesas
+            </span>
+          </div>
+        </div>
+
+        <div className="h-72 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={historicalData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#94a3b8" strokeOpacity={0.2} />
+              <XAxis 
+                dataKey="month" 
+                stroke="#94a3b8" 
+                fontSize={12} 
+                tickLine={false} 
+                axisLine={{ stroke: '#94a3b8', strokeOpacity: 0.3 }}
+              />
+              <YAxis 
+                stroke="#94a3b8" 
+                fontSize={11} 
+                tickLine={false} 
+                axisLine={false}
+                tickFormatter={(val) => {
+                  if (!showValues) return '••••';
+                  if (val >= 1000) return `R$ ${(val / 1000).toFixed(0)}k`;
+                  return `R$ ${val}`;
+                }}
+              />
+              <Tooltip 
+                content={({ active, payload, label }) => {
+                  if (active && payload && payload.length) {
+                    return (
+                      <div className="bg-slate-900 text-white p-3 rounded-2xl shadow-2xl border border-slate-700 text-xs space-y-2">
+                        <p className="font-bold text-slate-200 border-b border-slate-800 pb-1.5">{label}</p>
+                        {payload.map((entry: any, index: number) => (
+                          <div key={`item-${index}`} className="flex items-center justify-between gap-6">
+                            <span className="flex items-center gap-1.5 font-semibold" style={{ color: entry.color }}>
+                              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
+                              {entry.name}:
+                            </span>
+                            <span className="font-bold text-slate-100">
+                              {showValues ? (entry.value as number).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'R$ •••••'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <Legend 
+                wrapperStyle={{ paddingTop: '12px' }} 
+                iconType="circle"
+              />
+              <Line 
+                type="monotone" 
+                dataKey="Receitas" 
+                stroke="#10b981" 
+                strokeWidth={3} 
+                dot={{ r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#fff' }} 
+                activeDot={{ r: 7, strokeWidth: 2, stroke: '#fff' }} 
+              />
+              <Line 
+                type="monotone" 
+                dataKey="Despesas" 
+                stroke="#ef4444" 
+                strokeWidth={3} 
+                dot={{ r: 4, fill: '#ef4444', strokeWidth: 2, stroke: '#fff' }} 
+                activeDot={{ r: 7, strokeWidth: 2, stroke: '#fff' }} 
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
     </div>
   );
 };

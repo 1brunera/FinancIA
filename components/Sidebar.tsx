@@ -86,32 +86,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Dashboard */}
         <button
           onClick={() => onNavigate('dashboard')}
-          className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${
+          className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all font-medium ${
             activeView === 'dashboard' 
-              ? 'bg-primary-600 text-white shadow-lg shadow-primary-900/20' 
-              : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-white'
+              ? 'bg-primary-600 text-white shadow-lg shadow-primary-900/20 font-bold' 
+              : 'text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/80 dark:hover:bg-blue-950/30'
           }`}
           title={(!isExpanded && !isMobileOpen) ? 'Dashboard' : ''}
         >
           <LayoutDashboard size={22} className="shrink-0" />
           {(isExpanded || isMobileOpen) && (
-            <span className="font-medium whitespace-nowrap overflow-hidden">Dashboard</span>
+            <span className="whitespace-nowrap overflow-hidden">Dashboard</span>
           )}
         </button>
 
         {/* Investments */}
         <button
           onClick={() => onNavigate('investments')}
-          className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${
+          className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all font-medium ${
             activeView === 'investments' 
-              ? 'bg-primary-600 text-white shadow-lg shadow-primary-900/20' 
-              : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-white'
+              ? 'bg-primary-600 text-white shadow-lg shadow-primary-900/20 font-bold' 
+              : 'text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/80 dark:hover:bg-blue-950/30'
           }`}
           title={(!isExpanded && !isMobileOpen) ? 'Investimentos' : ''}
         >
           <TrendingUp size={22} className="shrink-0" />
           {(isExpanded || isMobileOpen) && (
-            <span className="font-medium whitespace-nowrap overflow-hidden">Investimentos</span>
+            <span className="whitespace-nowrap overflow-hidden">Investimentos</span>
           )}
         </button>
 
@@ -129,15 +129,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         setIsManagementOpen(!isManagementOpen);
                     }
                 }}
-                className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${
-                    isManagementActive ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 dark:bg-slate-900' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-white'
+                className={`w-full flex items-center justify-between p-3 rounded-xl transition-all font-medium ${
+                    isManagementActive 
+                      ? 'text-primary-700 dark:text-primary-400 font-bold bg-primary-50/60 dark:bg-primary-950/30' 
+                      : 'text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/80 dark:hover:bg-blue-950/30'
                 }`}
                 title={(!isExpanded && !isMobileOpen) ? 'Gestão' : ''}
             >
                 <div className="flex items-center gap-3">
                     <Wallet size={22} className="shrink-0" />
                     {(isExpanded || isMobileOpen) && (
-                        <span className="font-medium whitespace-nowrap overflow-hidden">Gestão</span>
+                        <span className="whitespace-nowrap overflow-hidden">Gestão</span>
                     )}
                 </div>
                 {(isExpanded || isMobileOpen) && (
@@ -155,10 +157,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             <button
                                 key={item.id}
                                 onClick={() => onNavigate(item.id)}
-                                className={`w-full flex items-center gap-3 p-2 rounded-lg text-sm transition-all ${
+                                className={`w-full flex items-center gap-3 p-2.5 rounded-lg text-sm transition-all ${
                                     isActive 
-                                    ? 'text-primary-600 dark:text-primary-400 font-bold bg-slate-100 dark:bg-slate-800 dark:bg-slate-900/50' 
-                                    : 'text-slate-500 dark:text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-900/30'
+                                    ? 'text-primary-600 dark:text-primary-400 font-bold bg-primary-50 dark:bg-primary-950/40 border-l-2 border-primary-500' 
+                                    : 'text-slate-900 dark:text-slate-100 font-medium hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/80 dark:hover:bg-blue-950/30'
                                 }`}
                             >
                                 <Icon size={18} />
@@ -173,16 +175,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* AI Advisor */}
         <button
           onClick={() => onNavigate('ai-advisor')}
-          className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${
+          className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all font-medium ${
             activeView === 'ai-advisor' 
-              ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/20' 
-              : 'text-indigo-400 hover:bg-indigo-900/20 hover:text-indigo-300'
+              ? 'bg-primary-600 text-white shadow-lg shadow-primary-900/20 font-bold' 
+              : 'text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/80 dark:hover:bg-blue-950/30'
           }`}
           title={(!isExpanded && !isMobileOpen) ? 'Consultor IA' : ''}
         >
           <BrainCircuit size={22} className="shrink-0" />
           {(isExpanded || isMobileOpen) && (
-            <span className="font-medium whitespace-nowrap overflow-hidden">Consultor IA</span>
+            <span className="whitespace-nowrap overflow-hidden">Consultor IA</span>
           )}
         </button>
 
@@ -193,33 +195,33 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Settings */}
         <button
           onClick={() => onNavigate('settings')}
-          className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${
+          className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all font-medium ${
             activeView === 'settings' 
-              ? 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' 
-              : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-white'
+              ? 'bg-primary-600 text-white shadow-lg shadow-primary-900/20 font-bold' 
+              : 'text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/80 dark:hover:bg-blue-950/30'
           }`}
           title={(!isExpanded && !isMobileOpen) ? 'Configurações' : ''}
         >
           <SettingsIcon size={22} className="shrink-0" />
           {(isExpanded || isMobileOpen) && (
-            <span className="font-medium whitespace-nowrap overflow-hidden">Configurações</span>
+            <span className="whitespace-nowrap overflow-hidden">Configurações</span>
           )}
         </button>
 
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 p-3 rounded-xl transition-all text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-300"
+          className="w-full flex items-center gap-3 p-3 rounded-xl transition-all text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-300 font-medium"
           title={(!isExpanded && !isMobileOpen) ? 'Sair' : ''}
         >
           <LogOut size={22} className="shrink-0" />
           {(isExpanded || isMobileOpen) && (
-            <span className="font-medium whitespace-nowrap overflow-hidden">Sair</span>
+            <span className="whitespace-nowrap overflow-hidden">Sair</span>
           )}
         </button>
 
         <button
           onClick={toggleSidebar}
-          className="hidden md:flex w-full items-center justify-center p-2 rounded-lg bg-slate-100 dark:bg-slate-800 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+          className="hidden md:flex w-full items-center justify-center p-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/30 text-slate-800 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
         >
           {isExpanded ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
         </button>

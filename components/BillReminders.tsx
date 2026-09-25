@@ -20,7 +20,7 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   
   // Filters
-  const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'paid'>('pending');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'paid'>('all');
   const [filterPayment, setFilterPayment] = useState<string>('all'); // 'all', 'cash', or cardId
   const [periodFilter, setPeriodFilter] = useState<'all' | 'week' | 'month' | 'year'>('all');
   
@@ -245,10 +245,54 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
     );
   };
 
+  // Summary totals based on current list
+  const totalAmount = bills.reduce((sum, b) => sum + b.amount, 0);
+  const pendingAmount = bills.filter(b => !b.isPaid).reduce((sum, b) => sum + b.amount, 0);
+  const paidAmount = bills.filter(b => b.isPaid).reduce((sum, b) => sum + b.amount, 0);
+
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden mb-8">
-      {/* Header with Controls */}
-      <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex flex-col xl:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-900">
+    <div className="space-y-4 mb-8">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total de Contas</p>
+          <p className="text-xl md:text-2xl font-bold text-slate-800 dark:text-white">
+            {formatCurrency(totalAmount)}
+          </p>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+            {bills.length} {bills.length === 1 ? 'conta cadastrada' : 'contas cadastradas'}
+          </span>
+        </div>
+
+        <div className="bg-amber-50/80 dark:bg-amber-950/30 p-4 rounded-2xl border border-amber-200/60 dark:border-amber-800/50 shadow-sm">
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-xs font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wider">A Pagar (Pendente)</p>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-200/60 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200">
+              Saldo a Pagar
+            </span>
+          </div>
+          <p className="text-xl md:text-2xl font-extrabold text-amber-600 dark:text-amber-400">
+            {formatCurrency(pendingAmount)}
+          </p>
+          <span className="text-[11px] text-amber-700/80 dark:text-amber-300/80 font-medium">
+            Ainda pendente no mês
+          </span>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Já Pago</p>
+          <p className="text-xl md:text-2xl font-bold text-slate-700 dark:text-slate-200">
+            {formatCurrency(paidAmount)}
+          </p>
+          <span className="text-[11px] text-green-600 dark:text-green-400 font-medium">
+            {bills.filter(b => b.isPaid).length} contas pagas
+          </span>
+        </div>
+      </div>
+
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
+        {/* Header with Controls */}
+        <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex flex-col xl:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-900">
         <div className="flex items-center gap-3">
              <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
                 <CalendarIcon size={24} />
@@ -608,6 +652,7 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
             </div>
         )}
       </div>
+    </div>
     </div>
   );
 };

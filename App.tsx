@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Bell, Calendar, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Wallet, Menu, History, PiggyBank, Sun, Moon, CreditCard as CreditCardIcon, Settings2, Eye, EyeOff, FileDown } from 'lucide-react';
+import { Plus, Bell, Calendar, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Wallet, Menu, History, PiggyBank, Sun, Moon, CreditCard as CreditCardIcon, Settings2, Eye, EyeOff, FileDown, RotateCw, Trash2, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Transaction, TransactionType, CategoryOption, Bill, CreditCard, IncomeReminder, Investment, InvestmentGoal } from './types';
 import { MOCK_TRANSACTIONS, DEFAULT_CATEGORIES, MOCK_INVESTMENTS, MOCK_GOALS } from './constants';
 import { TransactionForm } from './components/TransactionForm';
@@ -19,6 +19,8 @@ import { AuthScreen } from './components/AuthScreen';
 import { Session } from '@supabase/supabase-js';
 import { getCardInvoiceInfo } from './utils/creditCard';
 import { exportMonthlySummaryPDF } from './utils/exportPDF';
+import { checkAndNotifyUpcomingBills } from './utils/notifications';
+import { PushNotificationToast } from './components/PushNotificationToast';
 
 const App: React.FC = () => {
   // --- Auth State ---
@@ -217,6 +219,20 @@ const App: React.FC = () => {
     return localStorage.getItem('finance_theme') || 'light';
   });
 
+  const [monthlyBudgetLimit, setMonthlyBudgetLimit] = useState<number>(() => {
+    return Number(localStorage.getItem('finance_monthly_budget_limit')) || 0;
+  });
+
+  const handleMonthlyBudgetLimitChange = async (limit: number) => {
+    setMonthlyBudgetLimit(limit);
+    saveToLocal('finance_monthly_budget_limit', limit.toString());
+    if (session) {
+      await supabase.auth.updateUser({
+        data: { monthlyBudgetLimit: limit }
+      });
+    }
+  };
+
   const [dashboardConfig, setDashboardConfig] = useState(() => {
     try {
       const saved = localStorage.getItem('finance_dashboard_config');
@@ -236,6 +252,19 @@ const App: React.FC = () => {
     }
   });
   const [isConfigOpen, setIsConfigOpen] = useState(false);
+
+  // Push notifications state for upcoming bills (< 2 days)
+  const [urgentBillsForToast, setUrgentBillsForToast] = useState<Bill[]>([]);
+  const [hasDismissedToast, setHasDismissedToast] = useState(false);
+
+  useEffect(() => {
+    if (bills.length > 0) {
+      const urgent = checkAndNotifyUpcomingBills(bills);
+      if (urgent.length > 0 && !hasDismissedToast) {
+        setUrgentBillsForToast(urgent);
+      }
+    }
+  }, [bills, hasDismissedToast]);
 
   const toggleDashboardConfig = (key: keyof typeof dashboardConfig) => {
     const newConfig = { ...dashboardConfig, [key]: !dashboardConfig[key] };
@@ -277,6 +306,10 @@ const App: React.FC = () => {
           
           const fetchedGoals = await db.getInvestmentGoals();
           if (fetchedGoals.length > 0) setInvestmentGoals(fetchedGoals);
+
+          if (session?.user?.user_metadata?.monthlyBudgetLimit !== undefined) {
+            setMonthlyBudgetLimit(Number(session.user.user_metadata.monthlyBudgetLimit));
+          }
         } catch (e) {
           console.error("Error loading data from Supabase", e);
         }
@@ -813,27 +846,45 @@ const App: React.FC = () => {
 
     const previousBalance = previousIncome - previousExpense;
 
-    // 2. Current Month Transactions
+    // 2. Current Month Transactions (Realized)
     const currentTransactions = transactions.filter(t => {
         const tDate = new Date(t.date);
         const tDateNormalized = new Date(tDate.getFullYear(), tDate.getMonth(), tDate.getDate());
         return tDateNormalized >= startOfSelectedMonth && tDateNormalized < startOfNextMonth;
     });
 
-    const currentIncome = currentTransactions
+    const realizedIncome = currentTransactions
         .filter(t => t.type === TransactionType.INCOME)
         .reduce((sum, t) => sum + t.amount, 0);
 
-    const currentExpense = currentTransactions
+    const realizedExpense = currentTransactions
         .filter(t => t.type === TransactionType.EXPENSE && (!t.paymentMethodId || t.paymentMethodId === 'cash'))
         .reduce((sum, t) => sum + t.amount, 0);
     
+    const realizedBalance = realizedIncome - realizedExpense;
+
+    // 3. Pending bills & income for the selected month
+    const pendingBillsThisMonth = bills.filter(b => {
+      if (b.isPaid) return false;
+      const bDate = new Date(b.dueDate + 'T12:00:00');
+      return bDate.getFullYear() === year && bDate.getMonth() === month;
+    }).reduce((sum, b) => sum + b.amount, 0);
+
+    const pendingIncomeThisMonth = incomeReminders.filter(i => {
+      if (i.isReceived) return false;
+      const iDate = new Date(i.dueDate + 'T12:00:00');
+      return iDate.getFullYear() === year && iDate.getMonth() === month;
+    }).reduce((sum, i) => sum + i.amount, 0);
+
+    // 4. Consolidated values for the month (Realized + Pending to receive/pay)
+    const currentIncome = realizedIncome + pendingIncomeThisMonth;
+    const currentExpense = realizedExpense + pendingBillsThisMonth;
     const currentBalance = currentIncome - currentExpense;
 
-    // 3. Total Accumulated Balance (Available Now)
-    const totalAccumulatedBalance = previousBalance + currentBalance;
+    // 5. Total Accumulated Balance (Available realized balance now)
+    const totalAccumulatedBalance = previousBalance + realizedBalance;
 
-    // 4. Budget Forecast (Previsão de orçamento)
+    // 6. Budget Forecast (Previsão de orçamento)
     // Includes pending bills and income up to the end of the selected month
     const endOfSelectedMonth = new Date(year, month + 1, 0, 23, 59, 59);
 
@@ -855,11 +906,16 @@ const App: React.FC = () => {
 
     return {
         previousBalance,
+        realizedIncome,
+        realizedExpense,
+        realizedBalance,
         currentIncome,
         currentExpense,
         currentBalance,
         totalAccumulatedBalance,
         budgetForecast,
+        pendingIncome: pendingIncomeThisMonth,
+        pendingBills: pendingBillsThisMonth,
         totalInvested,
         monthlyTransactions: currentTransactions
     };
@@ -903,6 +959,10 @@ const App: React.FC = () => {
   }, [bills]);
 
   // --- Handlers & Export ---
+  const handleReloadPage = () => {
+    window.location.reload();
+  };
+
   const handleExportPDF = () => {
     exportMonthlySummaryPDF({
       currentDate,
@@ -936,14 +996,24 @@ const App: React.FC = () => {
                 <ChevronRight size={20} />
             </button>
         </div>
-        <button
-            onClick={handleExportPDF}
-            className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm font-semibold text-xs md:text-sm transition-all hover:shadow hover:border-primary-400 dark:hover:border-primary-500 active:scale-[0.98]"
-            title="Exportar Resumo do Mês em PDF (amigável para impressão)"
-        >
-            <FileDown size={18} className="text-primary-600 dark:text-primary-400" />
-            <span>Exportar PDF</span>
-        </button>
+        <div className="flex items-center justify-end gap-2 flex-wrap">
+            <button
+                onClick={() => setShowValues(!showValues)}
+                className="flex items-center gap-1.5 px-3.5 py-2.5 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm font-semibold text-xs md:text-sm transition-all hover:shadow active:scale-[0.98] cursor-pointer"
+                title={showValues ? 'Ocultar valores' : 'Ver valores'}
+            >
+                {showValues ? <EyeOff size={16} className="text-slate-500 dark:text-slate-400" /> : <Eye size={16} className="text-slate-500 dark:text-slate-400" />}
+                <span>{showValues ? 'Ocultar valores' : 'Ver valores'}</span>
+            </button>
+            <button
+                onClick={handleExportPDF}
+                className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm font-semibold text-xs md:text-sm transition-all hover:shadow hover:border-primary-400 dark:hover:border-primary-500 active:scale-[0.98]"
+                title="Exportar Resumo do Mês em PDF (amigável para impressão)"
+            >
+                <FileDown size={18} className="text-primary-600 dark:text-primary-400" />
+                <span>Exportar PDF</span>
+            </button>
+        </div>
     </div>
   );
 
@@ -987,26 +1057,47 @@ const App: React.FC = () => {
 
                     <MonthSelector />
 
+                    {/* Alert for Monthly Budget Limit Exceeded */}
+                    {monthlyBudgetLimit > 0 && financialData.currentExpense > monthlyBudgetLimit && (
+                        <div className="mb-6 bg-gradient-to-r from-red-500/15 via-rose-500/10 to-red-500/5 border border-red-500/30 rounded-2xl p-4 md:p-5 shadow-sm animate-fade-in-down">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div className="flex items-start gap-3">
+                                    <div className="p-2 bg-red-500 text-white rounded-xl shrink-0 shadow-xs mt-0.5">
+                                        <AlertTriangle size={22} />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold text-red-900 dark:text-red-200 text-sm md:text-base flex items-center gap-2 flex-wrap">
+                                            <span>Atenção: Limite de orçamento mensal ultrapassado!</span>
+                                            <span className="text-xs px-2 py-0.5 rounded-full font-extrabold bg-red-600 text-white">
+                                                {((financialData.currentExpense / monthlyBudgetLimit) * 100).toFixed(0)}% do limite
+                                            </span>
+                                        </h4>
+                                        <p className="text-xs md:text-sm text-red-700 dark:text-red-300 mt-1">
+                                            As despesas consolidadas de {formatCurrentMonth()} atingiram <strong>{showValues ? formatCurrency(financialData.currentExpense) : '••••'}</strong>, superando o teto definido de <strong>{showValues ? formatCurrency(monthlyBudgetLimit) : '••••'}</strong> em <strong>{showValues ? formatCurrency(financialData.currentExpense - monthlyBudgetLimit) : '••••'}</strong>.
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setActiveView('settings')}
+                                    className="self-start sm:self-center text-xs font-bold text-red-700 dark:text-red-300 bg-red-100 hover:bg-red-200 dark:bg-red-950/60 dark:hover:bg-red-900/60 px-3.5 py-2 rounded-xl transition-colors border border-red-200 dark:border-red-800 shrink-0 cursor-pointer"
+                                >
+                                    Ajustar Limite
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Summary Cards - Updated with Rollover Logic */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                         
                         {/* Accumulated Balance (Main) */}
-                        <div className="no-invert bg-slate-900 p-5 md:p-6 rounded-3xl shadow-xl shadow-slate-200 dark:shadow-none text-white relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
-                                <PiggyBank size={80} />
-                            </div>
+                        <div className="no-invert bg-slate-900 p-5 md:p-6 rounded-3xl shadow-xl shadow-slate-200 dark:shadow-none text-white relative overflow-hidden">
                             <div className="relative z-10">
-                                <div className="flex items-center justify-between mb-2 md:mb-3">
-                                    <div className="flex items-center gap-2">
-                                        <p className="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider">Previsão de orçamento</p>
-                                        <span className="bg-slate-800 text-[10px] px-2 py-0.5 rounded text-slate-300">Mês Atual</span>
-                                    </div>
-                                    <button 
-                                        onClick={() => setShowValues(!showValues)}
-                                        className="text-slate-400 hover:text-white transition-colors p-1"
-                                    >
-                                        {showValues ? <Eye size={18} /> : <EyeOff size={18} />}
-                                    </button>
+                                <div className="flex items-center gap-2 mb-2 md:mb-3 flex-wrap">
+                                    <p className="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider">Previsão de orçamento</p>
+                                    <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-800 text-slate-200 border border-slate-700 whitespace-nowrap shrink-0">
+                                        Mês atual
+                                    </span>
                                 </div>
                                 <h2 className="text-3xl md:text-4xl font-bold mb-3 md:mb-4 tracking-tight">
                                     {showValues ? formatCurrency(financialData.budgetForecast) : 'R$ •••••'}
@@ -1016,6 +1107,17 @@ const App: React.FC = () => {
                                         <History size={14} />
                                         <span>Saldo Atual: {showValues ? formatCurrency(financialData.totalAccumulatedBalance) : 'R$ •••••'}</span>
                                     </div>
+                                    {(financialData.pendingIncome > 0 || financialData.pendingBills > 0) && (
+                                        <div className="flex items-center gap-2 text-[11px] font-medium text-slate-300">
+                                            {financialData.pendingIncome > 0 && (
+                                                <span className="text-emerald-400">+{showValues ? formatCurrency(financialData.pendingIncome) : '••••'} a entrar</span>
+                                            )}
+                                            {financialData.pendingIncome > 0 && financialData.pendingBills > 0 && <span>|</span>}
+                                            {financialData.pendingBills > 0 && (
+                                                <span className="text-amber-400">-{showValues ? formatCurrency(financialData.pendingBills) : '••••'} a pagar</span>
+                                            )}
+                                        </div>
+                                    )}
                                     <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
                                         <TrendingUp size={14} className="text-green-400" />
                                         <span>Investimentos: {showValues ? formatCurrency(financialData.totalInvested) : 'R$ •••••'}</span>
@@ -1024,39 +1126,81 @@ const App: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Current Month Income */}
+                        {/* Current Month Income (Consolidated: Realized + Pending) */}
                         <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden group">
-                            <div className="absolute top-4 right-4 p-2 bg-green-50 text-green-600 rounded-xl">
+                            <div className="absolute top-4 right-4 p-2 bg-green-50 dark:bg-green-950/40 text-green-600 dark:text-green-400 rounded-xl">
                                 <TrendingUp size={24} />
                             </div>
                             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 md:mb-3">Receitas</p>
                             <h2 className="text-2xl md:text-3xl font-bold text-slate-800 dark:text-white tracking-tight">
                                 {showValues ? formatCurrency(financialData.currentIncome) : 'R$ •••••'}
                             </h2>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 font-medium">Entradas este mês</p>
+                            <div className="flex items-center justify-between text-xs mt-2 font-medium flex-wrap gap-1">
+                                <span className="text-slate-500 dark:text-slate-400">
+                                    {financialData.pendingIncome > 0 
+                                        ? `Recebido: ${showValues ? formatCurrency(financialData.realizedIncome) : '••••'}` 
+                                        : 'Entradas deste mês'}
+                                </span>
+                                {financialData.pendingIncome > 0 && (
+                                    <span className="text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded">
+                                        +{showValues ? formatCurrency(financialData.pendingIncome) : '••••'} a entrar
+                                    </span>
+                                )}
+                            </div>
                         </div>
 
-                        {/* Current Month Expense */}
+                        {/* Current Month Expense (Consolidated: Realized + Pending) */}
                         <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden group">
-                            <div className="absolute top-4 right-4 p-2 bg-red-50 text-red-600 rounded-xl">
+                            <div className="absolute top-4 right-4 p-2 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 rounded-xl">
                                 <TrendingDown size={24} />
                             </div>
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 md:mb-3">Despesas</p>
+                            <div className="flex items-center gap-2 mb-2 md:mb-3">
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Despesas</p>
+                                {monthlyBudgetLimit > 0 && financialData.currentExpense > monthlyBudgetLimit && (
+                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 border border-red-300 dark:border-red-800 flex items-center gap-1">
+                                        <AlertTriangle size={10} /> Excedido
+                                    </span>
+                                )}
+                            </div>
                             <h2 className="text-2xl md:text-3xl font-bold text-slate-800 dark:text-white tracking-tight">
                                 {showValues ? formatCurrency(financialData.currentExpense) : 'R$ •••••'}
                             </h2>
-                             <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 font-medium">Saídas este mês</p>
+                            <div className="flex items-center justify-between text-xs mt-2 font-medium flex-wrap gap-1">
+                                <span className="text-slate-500 dark:text-slate-400">
+                                    {financialData.pendingBills > 0 
+                                        ? `Pago: ${showValues ? formatCurrency(financialData.realizedExpense) : '••••'}` 
+                                        : 'Saídas deste mês'}
+                                </span>
+                                {financialData.pendingBills > 0 && (
+                                    <span className="text-amber-600 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-950/50 px-1.5 py-0.5 rounded">
+                                        +{showValues ? formatCurrency(financialData.pendingBills) : '••••'} a pagar
+                                    </span>
+                                )}
+                            </div>
+                            {monthlyBudgetLimit > 0 && (
+                                <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80">
+                                    <div className="flex items-center justify-between text-[11px] mb-1">
+                                        <span className="text-slate-400 font-medium">Teto: {showValues ? formatCurrency(monthlyBudgetLimit) : '••••'}</span>
+                                        <span className={`font-bold ${financialData.currentExpense > monthlyBudgetLimit ? 'text-red-500' : 'text-emerald-500'}`}>
+                                            {((financialData.currentExpense / monthlyBudgetLimit) * 100).toFixed(0)}%
+                                        </span>
+                                    </div>
+                                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                        <div 
+                                            className={`h-full rounded-full transition-all duration-500 ${financialData.currentExpense > monthlyBudgetLimit ? 'bg-red-500' : 'bg-emerald-500'}`}
+                                            style={{ width: `${Math.min((financialData.currentExpense / monthlyBudgetLimit) * 100, 100)}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
-                        {/* Current Month Balance (Only this month) - Highlighted with prominent green/red styling */}
-                        <div className={`p-5 md:p-6 rounded-3xl shadow-xl transition-all relative overflow-hidden group ${
+                        {/* Current Month Balance (Consolidated) - Highlighted with prominent green/red styling */}
+                        <div className={`p-5 md:p-6 rounded-3xl shadow-xl transition-all relative overflow-hidden ${
                             financialData.currentBalance >= 0 
                                 ? 'bg-gradient-to-br from-emerald-600 via-emerald-600 to-teal-700 text-white shadow-emerald-500/25 dark:shadow-emerald-950/40 border border-emerald-500/40 ring-1 ring-emerald-400/30' 
                                 : 'bg-gradient-to-br from-rose-600 via-rose-600 to-red-700 text-white shadow-rose-500/25 dark:shadow-rose-950/40 border border-rose-500/40 ring-1 ring-rose-400/30'
                         }`}>
-                            <div className="absolute top-0 right-0 p-6 opacity-15 group-hover:opacity-25 transition-opacity pointer-events-none">
-                                <Wallet size={80} />
-                            </div>
                             <div className="relative z-10">
                                 <div className="flex items-center justify-between mb-2 md:mb-3">
                                     <div className="flex items-center gap-2">
@@ -1067,16 +1211,18 @@ const App: React.FC = () => {
                                             {financialData.currentBalance >= 0 ? 'Positivo' : 'Negativo'}
                                         </span>
                                     </div>
-                                    <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm text-white">
-                                        <Wallet size={20} />
-                                    </div>
                                 </div>
                                 <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white mb-1.5">
                                     {showValues ? formatCurrency(financialData.currentBalance) : 'R$ •••••'}
                                 </h2>
-                                <p className="text-xs text-white/80 font-medium">
-                                    Receitas − Despesas deste mês
-                                </p>
+                                <div className="flex items-center justify-between text-xs text-white/80 font-medium">
+                                    <span>Receitas − Despesas consolidadas</span>
+                                    {(financialData.pendingIncome > 0 || financialData.pendingBills > 0) && (
+                                        <span className="text-white/90 text-[11px] font-semibold bg-white/10 px-1.5 py-0.5 rounded">
+                                            Realizado: {showValues ? formatCurrency(financialData.realizedBalance) : '••••'}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1170,6 +1316,10 @@ const App: React.FC = () => {
 
                     <FinancialCharts 
                         transactions={financialData.monthlyTransactions} 
+                        allTransactions={transactions}
+                        currentDate={currentDate}
+                        bills={bills}
+                        incomeReminders={incomeReminders}
                         categories={categories} 
                         monthlyIncome={financialData.currentIncome}
                         creditCards={creditCards}
@@ -1331,6 +1481,8 @@ const App: React.FC = () => {
                         onImportData={handleImportData}
                         theme={theme}
                         onThemeChange={setTheme}
+                        monthlyBudgetLimit={monthlyBudgetLimit}
+                        onMonthlyBudgetLimitChange={handleMonthlyBudgetLimitChange}
                     />
                 </div>
             );
@@ -1411,8 +1563,15 @@ const App: React.FC = () => {
                 </div>
             </div>
             
-            <div className="flex items-center gap-4">
-                 {/* User profile or simple greeting could go here */}
+            <div className="flex items-center gap-2">
+                <button
+                    onClick={handleReloadPage}
+                    className="p-2 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-xl border border-slate-200/80 dark:border-slate-800 transition-all shadow-xs flex items-center gap-1.5 text-xs font-semibold"
+                    title="Recarregar a página"
+                >
+                    <RotateCw size={15} className="text-blue-500" />
+                    <span className="hidden sm:inline">Recarregar</span>
+                </button>
             </div>
         </header>
 
@@ -1448,6 +1607,13 @@ const App: React.FC = () => {
           creditCards={creditCards}
         />
       )}
+
+      {/* Push Notification Floating Alert */}
+      <PushNotificationToast 
+        bills={urgentBillsForToast} 
+        onPayBill={handlePayBill} 
+        onDismiss={() => setHasDismissedToast(true)} 
+      />
     </div>
   );
 };
