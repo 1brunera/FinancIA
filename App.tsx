@@ -500,14 +500,26 @@ const App: React.FC = () => {
     setCategories(prev => prev.filter(c => c.id !== id));
   };
 
+  // Helper to determine if a bill belongs to the target month based on competenceMonth or dueDate
+  const isBillInCompetenceMonth = (b: Bill, targetYear: number, targetMonthIndex: number) => {
+    if (b.competenceMonth) {
+      const [y, m] = b.competenceMonth.split('-').map(Number);
+      return y === targetYear && (m - 1) === targetMonthIndex;
+    }
+    const bDate = new Date(b.dueDate + 'T12:00:00');
+    return bDate.getFullYear() === targetYear && bDate.getMonth() === targetMonthIndex;
+  };
+
   const handleAddBill = async (newBill: Omit<Bill, 'id' | 'isPaid'> & { id?: string }) => {
     const groupId = crypto.randomUUID();
     const billsToAdd: Bill[] = [];
+    const transactionsToAdd: Omit<Transaction, 'id'>[] = [];
     
     if (newBill.recurrence === 'none') {
+        const billId = newBill.id || crypto.randomUUID();
         billsToAdd.push({
             ...newBill,
-            id: newBill.id || crypto.randomUUID(),
+            id: billId,
             isPaid: false,
             groupId
         });
@@ -516,33 +528,78 @@ const App: React.FC = () => {
         const startYear = startDueDate.getFullYear();
         let currentDueDate = new Date(startDueDate);
         
+        let initialCompDate: Date | null = null;
+        if (newBill.competenceMonth) {
+            const [cy, cm] = newBill.competenceMonth.split('-').map(Number);
+            initialCompDate = new Date(cy, cm - 1, 1);
+        }
+        
         // Contas recorrentes vão somente até dezembro do ano em questão
+        let step = 0;
         while (currentDueDate.getFullYear() === startYear) {
+            let itemCompMonth: string | undefined = undefined;
+            if (initialCompDate) {
+                const compStepDate = new Date(initialCompDate);
+                compStepDate.setMonth(compStepDate.getMonth() + step);
+                const cy = compStepDate.getFullYear();
+                const cm = String(compStepDate.getMonth() + 1).padStart(2, '0');
+                itemCompMonth = `${cy}-${cm}`;
+            } else {
+                itemCompMonth = currentDueDate.toISOString().substring(0, 7);
+            }
+
             billsToAdd.push({
                 ...newBill,
                 id: crypto.randomUUID(),
                 isPaid: false,
                 dueDate: currentDueDate.toISOString().split('T')[0],
+                competenceMonth: itemCompMonth,
                 groupId
             });
             
             const nextDate = new Date(currentDueDate);
             nextDate.setMonth(nextDate.getMonth() + 1);
             currentDueDate = nextDate;
+            step++;
         }
     } else if (newBill.recurrence === 'yearly') {
         // Apenas para o ano em questão
+        const billId = newBill.id || crypto.randomUUID();
         billsToAdd.push({
             ...newBill,
-            id: newBill.id || crypto.randomUUID(),
+            id: billId,
             isPaid: false,
             dueDate: newBill.dueDate,
             groupId
         });
     }
+
+    // If bill is paid via Credit Card, automatically generate corresponding credit card transactions
+    billsToAdd.forEach(b => {
+        if (b.paymentMethodId && b.paymentMethodId !== 'cash') {
+            const card = creditCards.find(c => c.id === b.paymentMethodId);
+            if (card) {
+                const invoiceInfo = getCardInvoiceInfo(card, b.dueDate, b.competenceMonth);
+                transactionsToAdd.push({
+                    description: b.description,
+                    amount: b.amount,
+                    type: TransactionType.EXPENSE,
+                    category: b.category || 'outros',
+                    date: b.dueDate,
+                    paymentMethodId: b.paymentMethodId,
+                    invoiceMonth: b.competenceMonth || invoiceInfo.invoiceMonthStr,
+                    status: 'Pendente'
+                });
+            }
+        }
+    });
     
     if (session) await db.addBills(billsToAdd, session.user.id);
     setBills(prev => [...prev, ...billsToAdd]);
+
+    if (transactionsToAdd.length > 0) {
+        await handleAddTransactions(transactionsToAdd);
+    }
   };
 
   const handleEditBill = async (updatedBill: Bill) => {
@@ -551,8 +608,29 @@ const App: React.FC = () => {
   };
 
   const handleDeleteBill = async (id: string) => {
+    const billToDelete = bills.find(b => b.id === id);
     if (session) await db.deleteBill(id);
     setBills(prev => prev.filter(b => b.id !== id));
+
+    // If bill had an associated credit card transaction, remove matching transaction
+    if (billToDelete && billToDelete.paymentMethodId && billToDelete.paymentMethodId !== 'cash') {
+        setTransactions(prev => {
+            const matchingIndex = prev.findIndex(t => 
+                t.description === billToDelete.description && 
+                t.amount === billToDelete.amount && 
+                t.paymentMethodId === billToDelete.paymentMethodId &&
+                t.type === TransactionType.EXPENSE
+            );
+            if (matchingIndex !== -1) {
+                const txToDelete = prev[matchingIndex];
+                if (session) db.deleteTransaction(txToDelete.id);
+                const nextTxs = [...prev];
+                nextTxs.splice(matchingIndex, 1);
+                return nextTxs;
+            }
+            return prev;
+        });
+    }
   };
 
   const handlePayBill = async (id: string) => {
@@ -562,16 +640,30 @@ const App: React.FC = () => {
     if (session) await db.updateBill({ ...bill, isPaid: true }, session.user.id);
     setBills(prev => prev.map(b => b.id === id ? { ...b, isPaid: true } : b));
 
-    // Add a single transaction for bill payment
-    handleAddTransactions([{
-        description: `Pgto: ${bill.description}`,
-        amount: bill.amount,
-        type: TransactionType.EXPENSE,
-        category: bill.category || 'outros',
-        date: new Date().toISOString().split('T')[0],
-        paymentMethodId: bill.paymentMethodId || 'cash',
-        status: 'Pago'
-    }]);
+    // Only add a cash payment transaction if paid in cash/debit (credit card charges are settled when invoice is paid)
+    if (!bill.paymentMethodId || bill.paymentMethodId === 'cash') {
+        handleAddTransactions([{
+            description: `Pgto: ${bill.description}`,
+            amount: bill.amount,
+            type: TransactionType.EXPENSE,
+            category: bill.category || 'outros',
+            date: new Date().toISOString().split('T')[0],
+            paymentMethodId: 'cash',
+            status: 'Pago'
+        }]);
+    } else {
+        // For credit cards, mark matching pending transaction as Pago
+        setTransactions(prev => {
+            return prev.map(t => {
+                if (t.description === bill.description && t.amount === bill.amount && t.paymentMethodId === bill.paymentMethodId) {
+                    const updated = { ...t, status: 'Pago' as TransactionStatus };
+                    if (session) db.updateTransaction(updated, session.user.id);
+                    return updated;
+                }
+                return t;
+            });
+        });
+    }
   };
 
   const handleUnpayBill = async (id: string) => {
@@ -897,8 +989,7 @@ const App: React.FC = () => {
     // 3. Pending bills & income for the selected month
     const pendingBillsThisMonth = bills.filter(b => {
       if (b.isPaid) return false;
-      const bDate = new Date(b.dueDate + 'T12:00:00');
-      return bDate.getFullYear() === year && bDate.getMonth() === month;
+      return isBillInCompetenceMonth(b, year, month);
     }).reduce((sum, b) => sum + b.amount, 0);
 
     const pendingIncomeThisMonth = incomeReminders.filter(i => {
@@ -921,6 +1012,11 @@ const App: React.FC = () => {
 
     const pendingBills = bills.filter(b => {
       if (b.isPaid) return false;
+      if (b.competenceMonth) {
+        const [cy, cm] = b.competenceMonth.split('-').map(Number);
+        const compDate = new Date(cy, cm - 1, 1);
+        return compDate <= endOfSelectedMonth;
+      }
       const bDate = new Date(b.dueDate + 'T12:00:00');
       return bDate <= endOfSelectedMonth;
     }).reduce((sum, b) => sum + b.amount, 0);
@@ -954,10 +1050,7 @@ const App: React.FC = () => {
   }, [transactions, currentDate, bills, incomeReminders, investments, investmentGoals]);
 
   const monthlyBills = useMemo(() => {
-    return bills.filter(b => {
-      const bDate = new Date(b.dueDate + 'T12:00:00');
-      return bDate.getMonth() === currentDate.getMonth() && bDate.getFullYear() === currentDate.getFullYear();
-    });
+    return bills.filter(b => isBillInCompetenceMonth(b, currentDate.getFullYear(), currentDate.getMonth()));
   }, [bills, currentDate]);
 
   const monthlyIncomes = useMemo(() => {

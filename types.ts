@@ -37,6 +37,7 @@ export interface Bill {
   category?: string;
   groupId?: string;
   isManualAmount?: boolean;
+  competenceMonth?: string; // e.g. '2026-10' (Mês de competência/exibição)
 }
 
 // New interface for Income Reminders

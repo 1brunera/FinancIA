@@ -28,6 +28,7 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [dueDate, setDueDate] = useState('');
+  const [competenceMonth, setCompetenceMonth] = useState('');
   // notifyDays is fixed to 3 internally now, as requested to remove option
   const notifyDays = '3';
   const [recurrence, setRecurrence] = useState<RecurrenceType>('none');
@@ -48,10 +49,20 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
 
+  const formatCompetenceMonthLabel = (compStr?: string) => {
+    if (!compStr) return '';
+    const [y, m] = compStr.split('-').map(Number);
+    if (!y || !m) return compStr;
+    const date = new Date(y, m - 1, 1);
+    const mName = date.toLocaleDateString('pt-BR', { month: 'short' });
+    return `${mName.charAt(0).toUpperCase() + mName.slice(1)}/${y}`;
+  };
+
   const openEditModal = (bill: Bill) => {
     setDescription(bill.description);
     setAmount(bill.amount.toString());
     setDueDate(bill.dueDate);
+    setCompetenceMonth(bill.competenceMonth || bill.dueDate.substring(0, 7));
     setCategory(bill.category || EXPENSE_CATEGORIES[0].id);
     setPaymentMethodId(bill.paymentMethodId || 'cash');
     setRecurrence(bill.recurrence);
@@ -64,6 +75,7 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
     setDescription('');
     setAmount('');
     setDueDate('');
+    setCompetenceMonth('');
     setRecurrence('none');
     setCustomMessage('');
     setPaymentMethodId('cash');
@@ -80,6 +92,8 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
     e.preventDefault();
     if (!description || !amount || !dueDate) return;
 
+    const finalCompetenceMonth = competenceMonth || dueDate.substring(0, 7);
+
     if (editingBillId && onEditBill) {
         const billToEdit = bills.find(b => b.id === editingBillId);
         if (billToEdit) {
@@ -88,6 +102,7 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
                 description,
                 amount: parseFloat(amount),
                 dueDate,
+                competenceMonth: finalCompetenceMonth,
                 notifyDaysBefore: parseInt(notifyDays),
                 recurrence,
                 customAlertMessage: customMessage || undefined,
@@ -100,6 +115,7 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
           description,
           amount: parseFloat(amount),
           dueDate,
+          competenceMonth: finalCompetenceMonth,
           notifyDaysBefore: parseInt(notifyDays),
           recurrence,
           customAlertMessage: customMessage || undefined,
@@ -452,10 +468,28 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
                             type="date"
                             required
                             value={dueDate}
-                            onChange={(e) => setDueDate(e.target.value)}
+                            onChange={(e) => {
+                                const newDate = e.target.value;
+                                setDueDate(newDate);
+                                if (!competenceMonth || competenceMonth === dueDate.substring(0, 7)) {
+                                    setCompetenceMonth(newDate.substring(0, 7));
+                                }
+                            }}
                             className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all font-medium text-sm"
                             />
                         </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Mês de Competência</label>
+                            <input
+                            type="month"
+                            value={competenceMonth}
+                            onChange={(e) => setCompetenceMonth(e.target.value)}
+                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all font-medium text-sm"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
                         <div>
                              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Recorrência</label>
                              <div className="relative">
@@ -478,7 +512,26 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
                                 </p>
                              )}
                         </div>
+
+                        <div className="flex flex-col justify-end">
+                            <span className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
+                                💡 <strong>Dica de Competência:</strong> Permite alocar a conta na previsão orçamentária de um mês diferente do vencimento (ex: conta de Outubro paga em Novembro).
+                            </span>
+                        </div>
                     </div>
+
+                    {/* Credit Card Info Alert */}
+                    {paymentMethodId !== 'cash' && (
+                        <div className="p-3.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/80 rounded-2xl text-xs text-blue-700 dark:text-blue-300 flex items-start gap-2.5">
+                            <CreditCard size={17} className="shrink-0 mt-0.5 text-blue-600 dark:text-blue-400" />
+                            <div className="leading-relaxed">
+                                <p className="font-bold">Integração com Cartão de Crédito</p>
+                                <p className="text-[11px] opacity-90 mt-0.5">
+                                    Esta despesa será computada automaticamente na fatura e no limite do cartão <strong>{getPaymentLabel(paymentMethodId)}</strong>.
+                                </p>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Removed Reminder settings as requested */}
 
@@ -585,6 +638,11 @@ export const BillReminders: React.FC<BillRemindersProps> = ({ bills, onAddBill, 
                                         <span className="text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md font-bold flex items-center gap-1">
                                             <Repeat size={12} />
                                             {getRecurrenceLabel(bill.recurrence)}
+                                        </span>
+                                    )}
+                                    {bill.competenceMonth && (
+                                        <span className="text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 px-2 py-1 rounded-md font-bold flex items-center gap-1 border border-blue-200/50 dark:border-blue-800/50" title="Mês de competência para a previsão orçamentária">
+                                            Comp.: {formatCompetenceMonthLabel(bill.competenceMonth)}
                                         </span>
                                     )}
                                     <span className="text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md font-medium flex items-center gap-1">

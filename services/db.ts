@@ -86,7 +86,8 @@ const mapBillToDb = (b: Bill, userId: string) => ({
   payment_method_id: b.paymentMethodId || null,
   category: b.category || null,
   group_id: b.groupId || null,
-  is_manual_amount: b.isManualAmount || false
+  is_manual_amount: b.isManualAmount || false,
+  competence_month: b.competenceMonth || null
 });
 
 const mapDbToBill = (row: any): Bill => ({
@@ -101,7 +102,8 @@ const mapDbToBill = (row: any): Bill => ({
   paymentMethodId: row.payment_method_id,
   category: row.category,
   groupId: row.group_id,
-  isManualAmount: row.is_manual_amount
+  isManualAmount: row.is_manual_amount,
+  competenceMonth: row.competence_month || undefined
 });
 
 const mapIncomeToDb = (i: IncomeReminder, userId: string) => ({
